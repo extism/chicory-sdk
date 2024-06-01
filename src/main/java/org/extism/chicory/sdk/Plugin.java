@@ -43,7 +43,11 @@ public class Plugin {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        } else {
+        } else if (wasm instanceof ManifestWasmFile) {
+            this.instance = Module.builder(((ManifestWasmFile) wasm).filePath).build().instantiate(imports);
+        } 
+        
+        else {
             throw new RuntimeException("We don't know what to do with this manifest");
         }
     }
