@@ -1,6 +1,16 @@
 package org.extism.chicory.sdk;
 
+import java.nio.file.Path;
+
 class ManifestWasm {
+}
+
+class ManifestWasmFile extends ManifestWasm {
+    final Path filePath;
+
+    public ManifestWasmFile(Path path) {
+        this.filePath = path;
+    }
 }
 
 class ManifestWasmPath extends ManifestWasm {
@@ -19,7 +29,7 @@ class ManifestWasmUrl extends ManifestWasm {
     }
 }
 
-class Manifest {
+public class Manifest {
     final ManifestWasm[] wasms;
 
     public static Manifest fromPath(String path) {
@@ -29,6 +39,11 @@ class Manifest {
 
     public static Manifest fromUrl(String url) {
         var wasm = new ManifestWasmUrl(url);
+        return new Manifest(new ManifestWasm[]{wasm});
+    }
+
+    public static Manifest fromFilePath(Path path) {
+        var wasm = new ManifestWasmFile(path);
         return new Manifest(new ManifestWasm[]{wasm});
     }
 
