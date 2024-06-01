@@ -53,7 +53,6 @@ public class Plugin {
                 var url = new URL(((ManifestWasmUrl) wasm).url);
                 var wasmInputStream = url.openStream();
                 builder = Module.builder(wasmInputStream);
-                //this.instance = .build().withHostImports(imports).instantiate();
             } catch (MalformedURLException e) {
                 throw new RuntimeException(e);
             } catch (IOException e) {
@@ -61,7 +60,6 @@ public class Plugin {
             }
         } else if (wasm instanceof ManifestWasmFile) {
             builder = Module.builder(((ManifestWasmFile) wasm).filePath);
-            //this.instance = .build().withHo.instantiate(imports);
         } else {
             throw new RuntimeException("We don't know what to do with this manifest");
         }
