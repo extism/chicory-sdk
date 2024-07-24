@@ -1,5 +1,6 @@
 package org.extism.chicory.sdk;
 
+import com.dylibso.chicory.aot.AotMachine;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.HostFunction;
@@ -66,9 +67,12 @@ public class Plugin {
             throw new RuntimeException("We don't know what to do with this manifest");
         }
 
-        this.instance = builder.withLogger(logger).build()
-                .withHostImports(imports)
-                .instantiate();
+        var moduleBuilder = builder.withLogger(logger).withHostImports(imports);
+
+        // uncomment for AOT mode
+        //moduleBuilder = moduleBuilder.withMachineFactory(AotMachine::new);
+
+        this.instance = moduleBuilder.build().instantiate();
     }
 
     public byte[] call(String funcName, byte[] input) {
