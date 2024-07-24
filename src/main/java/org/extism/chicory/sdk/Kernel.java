@@ -2,6 +2,7 @@ package org.extism.chicory.sdk;
 
 import static com.dylibso.chicory.wasm.types.Value.*;
 
+import com.dylibso.chicory.aot.AotMachine;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.ExportFunction;
@@ -44,7 +45,13 @@ public class Kernel {
 
     public Kernel(Logger logger) {
         var kernelStream = getClass().getClassLoader().getResourceAsStream("extism-runtime.wasm");
-        Instance kernel = Module.builder(kernelStream).withLogger(logger).build().instantiate();
+
+        var moduleBuilder = Module.builder(kernelStream).withLogger(logger);
+
+        // uncomment for AOT mode
+        //moduleBuilder = moduleBuilder.withMachineFactory(AotMachine::new);
+
+        Instance kernel = moduleBuilder.build().instantiate();
         memory = kernel.memory();
         alloc = kernel.export("alloc");
         free = kernel.export("free");
@@ -193,8 +200,8 @@ public class Kernel {
                         (Instance instance, Value... args) -> outputSet.apply(args),
                         IMPORT_MODULE_NAME,
                         "output_set",
-                        List.of(),
-                        List.of(ValueType.I64));
+                        List.of(ValueType.I64, ValueType.I64),
+                        List.of());
 
         hostFunctions[count++] =
                 new HostFunction(

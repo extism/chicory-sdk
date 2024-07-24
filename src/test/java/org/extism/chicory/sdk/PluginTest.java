@@ -10,7 +10,7 @@ public class PluginTest
 
     public void testGreet()
     {
-        var manifest = Manifest.fromUrl("https://github.com/extism/plugins/releases/download/v1.0.0/greet.wasm");
+        var manifest = Manifest.fromUrl("https://github.com/extism/plugins/releases/download/v1.1.0/greet.wasm");
         var plugin = new Plugin(manifest);
         var input = "Benjamin";
         var result = new String(plugin.call("greet", input.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);
