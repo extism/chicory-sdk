@@ -24,12 +24,12 @@ public class Plugin {
     }
 
     public Plugin(Manifest manifest, HostFunction[] hostFunctions, Logger logger) {
-        this.kernel = new Kernel();
-        this.manifest = manifest;
-
         if (logger == null) {
             logger = new SystemLogger();
         }
+
+        this.kernel = new Kernel(logger);
+        this.manifest = manifest;
 
         // TODO: Expand WASI Support here
         var options = WasiOptions.builder().build();

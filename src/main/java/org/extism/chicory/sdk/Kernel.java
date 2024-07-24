@@ -2,6 +2,8 @@ package org.extism.chicory.sdk;
 
 import static com.dylibso.chicory.wasm.types.Value.*;
 
+import com.dylibso.chicory.log.Logger;
+import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
@@ -36,8 +38,12 @@ public class Kernel {
     private final ExportFunction memoryBytes;
 
     public Kernel() {
+        this(new SystemLogger());
+    }
+
+    public Kernel(Logger logger) {
         var kernelStream = getClass().getClassLoader().getResourceAsStream("extism-runtime.wasm");
-        Instance kernel = Module.builder(kernelStream).build().instantiate();
+        Instance kernel = Module.builder(kernelStream).withLogger(logger).build().instantiate();
         memory = kernel.memory();
         alloc = kernel.export("alloc");
         free = kernel.export("free");
