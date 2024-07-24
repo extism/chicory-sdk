@@ -200,8 +200,8 @@ public class Kernel {
                         (Instance instance, Value... args) -> outputSet.apply(args),
                         IMPORT_MODULE_NAME,
                         "output_set",
-                        List.of(),
-                        List.of(ValueType.I64));
+                        List.of(ValueType.I64, ValueType.I64),
+                        List.of());
 
         hostFunctions[count++] =
                 new HostFunction(
