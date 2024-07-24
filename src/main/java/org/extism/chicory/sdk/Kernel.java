@@ -20,6 +20,7 @@ public class Kernel {
     private final ExportFunction alloc;
     private final ExportFunction free;
     private final ExportFunction length;
+    private final ExportFunction lengthUnsafe;
     private final ExportFunction loadU8;
     private final ExportFunction loadU64;
     private final ExportFunction inputLoadU8;
@@ -48,6 +49,7 @@ public class Kernel {
         alloc = kernel.export("alloc");
         free = kernel.export("free");
         length = kernel.export("length");
+        lengthUnsafe = kernel.export("length_unsafe");
         loadU8 = kernel.export("load_u8");
         loadU64 = kernel.export("load_u64");
         inputLoadU8 = kernel.export("input_load_u8");
@@ -79,7 +81,7 @@ public class Kernel {
     }
 
     public HostFunction[] toHostFunctions() {
-        var hostFunctions = new HostFunction[22];
+        var hostFunctions = new HostFunction[23];
         int count = 0;
 
         hostFunctions[count++] =
@@ -103,6 +105,14 @@ public class Kernel {
                         (Instance instance, Value... args) -> length.apply(args),
                         IMPORT_MODULE_NAME,
                         "length",
+                        List.of(ValueType.I64),
+                        List.of(ValueType.I64));
+
+        hostFunctions[count++] =
+                new HostFunction(
+                        (Instance instance, Value... args) -> lengthUnsafe.apply(args),
+                        IMPORT_MODULE_NAME,
+                        "length_unsafe",
                         List.of(ValueType.I64),
                         List.of(ValueType.I64));
 
