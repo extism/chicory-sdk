@@ -60,6 +60,8 @@ public class Plugin {
             }
         } else if (wasm instanceof ManifestWasmFile) {
             builder = Module.builder(((ManifestWasmFile) wasm).filePath);
+        } else if (wasm instanceof ManifestWasmBytes) {
+            builder = Module.builder(((ManifestWasmBytes) wasm).bytes);
         } else {
             throw new RuntimeException("We don't know what to do with this manifest");
         }

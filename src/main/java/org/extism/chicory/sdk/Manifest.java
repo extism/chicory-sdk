@@ -5,6 +5,13 @@ import java.nio.file.Path;
 class ManifestWasm {
 }
 
+class ManifestWasmBytes extends ManifestWasm {
+    final byte[] bytes;
+    public ManifestWasmBytes(byte[] bytes) {
+        this.bytes = bytes;
+    }
+}
+
 class ManifestWasmFile extends ManifestWasm {
     final Path filePath;
 
@@ -44,6 +51,11 @@ public class Manifest {
 
     public static Manifest fromFilePath(Path path) {
         var wasm = new ManifestWasmFile(path);
+        return new Manifest(new ManifestWasm[]{wasm});
+    }
+
+    public static Manifest fromBytes(byte[] bytes) {
+        var wasm = new ManifestWasmBytes(bytes);
         return new Manifest(new ManifestWasm[]{wasm});
     }
 
