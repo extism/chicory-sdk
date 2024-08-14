@@ -55,16 +55,16 @@ public class Plugin {
                 var wasmInputStream = url.openStream();
                 builder = Module.builder(wasmInputStream);
             } catch (MalformedURLException e) {
-                throw new RuntimeException(e);
+                throw new ExtismException(e);
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new ExtismException(e);
             }
         } else if (wasm instanceof ManifestWasmFile) {
             builder = Module.builder(((ManifestWasmFile) wasm).filePath);
         } else if (wasm instanceof ManifestWasmBytes) {
             builder = Module.builder(((ManifestWasmBytes) wasm).bytes);
         } else {
-            throw new RuntimeException("We don't know what to do with this manifest");
+            throw new ExtismException("We don't know what to do with this manifest");
         }
 
         var moduleBuilder = builder.withLogger(logger).withHostImports(imports);
@@ -82,7 +82,7 @@ public class Plugin {
         if (result == 0) {
             return kernel.getOutput();
         } else {
-            throw new RuntimeException("Failed");
+            throw new ExtismException("Failed");
         }
     }
 
