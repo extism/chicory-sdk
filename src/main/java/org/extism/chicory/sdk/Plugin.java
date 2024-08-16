@@ -1,30 +1,52 @@
 package org.extism.chicory.sdk;
 
-import com.dylibso.chicory.aot.AotMachine;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.runtime.Module;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-
 public class Plugin {
+    public static class Builder {
+        private final Manifest manifest;
+        private HostFunction[] hostFunctions = new HostFunction[0];
+        private Logger logger;
+
+        private Builder(Manifest manifest) {
+            this.manifest = manifest;
+        }
+
+        public Builder withHostFunctions(HostFunction... hostFunctions) {
+            this.hostFunctions = hostFunctions;
+            return this;
+        }
+
+        public Builder withLogger(Logger logger) {
+            this.logger = logger;
+            return this;
+        }
+
+        public Plugin build() {
+            return new Plugin(manifest, hostFunctions, logger);
+        }
+    }
+
+    public static Builder ofManifest(Manifest manifest) {
+        return new Builder(manifest);
+    }
+
     private final Manifest manifest;
     private final Instance instance;
     private final HostImports imports;
     private final Kernel kernel;
 
-    public Plugin(Manifest manifest) {
+    private Plugin(Manifest manifest) {
         this(manifest, new HostFunction[]{}, null);
     }
 
-    public Plugin(Manifest manifest, HostFunction[] hostFunctions, Logger logger) {
+    private Plugin(Manifest manifest, HostFunction[] hostFunctions, Logger logger) {
         if (logger == null) {
             logger = new SystemLogger();
         }
@@ -37,42 +59,25 @@ public class Plugin {
         var wasi = new WasiPreview1(logger, options);
         var wasiHostFunctions = wasi.toHostFunctions();
 
+        var hostFuncList = getHostFunctions(kernel.toHostFunctions(), hostFunctions, wasiHostFunctions);
+        this.imports = new HostImports(hostFuncList);
+
+        var moduleBuilder = new ManifestModuleMapper(manifest)
+                .toModuleBuilder()
+                .withLogger(logger)
+                .withHostImports(imports);
+
+        this.instance = moduleBuilder.build().instantiate();
+    }
+
+    private static HostFunction[] getHostFunctions(
+            HostFunction[] kernelFuncs, HostFunction[] hostFunctions, HostFunction[] wasiHostFunctions) {
         // concat list of host functions
-        var kernelFuncs = kernel.toHostFunctions();
         var hostFuncList = new HostFunction[hostFunctions.length + kernelFuncs.length + wasiHostFunctions.length];
         System.arraycopy(kernelFuncs, 0, hostFuncList, 0, kernelFuncs.length);
         System.arraycopy(hostFunctions, 0, hostFuncList, kernelFuncs.length, hostFunctions.length);
         System.arraycopy(wasiHostFunctions, 0, hostFuncList, kernelFuncs.length + hostFunctions.length, wasiHostFunctions.length);
-        this.imports = new HostImports(hostFuncList);
-
-        var wasm = this.manifest.wasms[0];
-        Module.Builder builder;
-        if (wasm instanceof ManifestWasmPath) {
-            builder = Module.builder(((ManifestWasmPath) wasm).path);
-        } else if (wasm instanceof ManifestWasmUrl) {
-            try {
-                var url = new URL(((ManifestWasmUrl) wasm).url);
-                var wasmInputStream = url.openStream();
-                builder = Module.builder(wasmInputStream);
-            } catch (MalformedURLException e) {
-                throw new ExtismException(e);
-            } catch (IOException e) {
-                throw new ExtismException(e);
-            }
-        } else if (wasm instanceof ManifestWasmFile) {
-            builder = Module.builder(((ManifestWasmFile) wasm).filePath);
-        } else if (wasm instanceof ManifestWasmBytes) {
-            builder = Module.builder(((ManifestWasmBytes) wasm).bytes);
-        } else {
-            throw new ExtismException("We don't know what to do with this manifest");
-        }
-
-        var moduleBuilder = builder.withLogger(logger).withHostImports(imports);
-
-        // uncomment for AOT mode
-        //moduleBuilder = moduleBuilder.withMachineFactory(AotMachine::new);
-
-        this.instance = moduleBuilder.build().instantiate();
+        return hostFuncList;
     }
 
     public byte[] call(String funcName, byte[] input) {
