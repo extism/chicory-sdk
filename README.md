@@ -11,10 +11,11 @@ to complete a full Extism SDK. If anyone would like to work on it feel free to r
 ## Example
 
 ```java
-var manifest =
-        Manifest.Builder
-                .fromUrl("https://github.com/extism/plugins/releases/download/v1.1.0/greet.wasm")
-                .build();
+        var manifest =
+        Manifest.ofWasms(
+                ManifestWasm.fromUrl(
+                                "https://github.com/extism/plugins/releases/download/v1.1.0/greet.wasm")
+                        .build()).build();
 var plugin = Plugin.Builder.ofManifest(manifest).build();
 var input = "Benjamin";
 var result = new String(plugin.call("greet", input.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);

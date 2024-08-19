@@ -9,10 +9,11 @@ import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
 
 public class Plugin {
+    public static Builder ofManifest(Manifest manifest) {
+        return new Builder(manifest);
+    }
+
     public static class Builder {
-        public static Builder ofManifest(Manifest manifest) {
-            return new Builder(manifest);
-        }
 
         private final Manifest manifest;
         private HostFunction[] hostFunctions = new HostFunction[0];
