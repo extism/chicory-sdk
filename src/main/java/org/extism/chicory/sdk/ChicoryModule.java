@@ -3,23 +3,14 @@ package org.extism.chicory.sdk;
 import com.dylibso.chicory.aot.AotMachine;
 import com.dylibso.chicory.runtime.Module;
 
-class ManifestModuleMapper {
-    private final Manifest manifest;
+public class ChicoryModule {
 
-    ManifestModuleMapper(Manifest manifest) {
-        this.manifest = manifest;
+    public static Module.Builder builderFrom(ManifestWasm m, Manifest.Options opts) {
+        Module.Builder mb = fromWasm(m);
+        return withOptions(mb, opts);
     }
 
-    Module.Builder toModuleBuilder() {
-        if (manifest.wasms.length > 1) {
-            throw new UnsupportedOperationException(
-                    "Manifests of multiple wasm files are not supported yet!");
-        }
-        Module.Builder mb = wasmToModuleBuilder(manifest.wasms[0]);
-        return withOptions(mb, manifest.options);
-    }
-
-    private Module.Builder wasmToModuleBuilder(ManifestWasm m) {
+    private static Module.Builder fromWasm(ManifestWasm m) {
         if (m instanceof ManifestWasmBytes) {
             ManifestWasmBytes mwb = (ManifestWasmBytes) m;
             return Module.builder(mwb.bytes);
@@ -37,7 +28,7 @@ class ManifestModuleMapper {
         }
     }
 
-    private Module.Builder withOptions(Module.Builder mb, Manifest.Options opts) {
+    private static Module.Builder withOptions(Module.Builder mb, Manifest.Options opts) {
         if (opts == null) {
             return mb;
         }
@@ -49,5 +40,4 @@ class ManifestModuleMapper {
         }
         return mb;
     }
-
 }

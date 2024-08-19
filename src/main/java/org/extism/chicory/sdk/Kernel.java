@@ -12,6 +12,7 @@ import com.dylibso.chicory.runtime.Module;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import com.dylibso.chicory.runtime.Memory;
+
 import java.util.HashMap;
 import java.util.List;
 
@@ -39,17 +40,16 @@ public class Kernel {
     private final ExportFunction errorGet;
     private final ExportFunction memoryBytes;
 
-    public Kernel() {
-        this(new SystemLogger());
-    }
-
-    public Kernel(Logger logger) {
+    public Kernel(Logger logger, Manifest.Options opts) {
         var kernelStream = getClass().getClassLoader().getResourceAsStream("extism-runtime.wasm");
 
         var moduleBuilder = Module.builder(kernelStream).withLogger(logger);
 
-        // uncomment for AOT mode
-        //moduleBuilder = moduleBuilder.withMachineFactory(AotMachine::new);
+        if (opts != null) {
+            if (opts.aot) {
+                moduleBuilder = moduleBuilder.withMachineFactory(AotMachine::new);
+            }
+        }
 
         Instance kernel = moduleBuilder.build().instantiate();
         memory = kernel.memory();
