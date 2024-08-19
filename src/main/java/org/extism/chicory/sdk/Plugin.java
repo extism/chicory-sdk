@@ -10,6 +10,10 @@ import com.dylibso.chicory.wasi.WasiPreview1;
 
 public class Plugin {
     public static class Builder {
+        public static Builder ofManifest(Manifest manifest) {
+            return new Builder(manifest);
+        }
+
         private final Manifest manifest;
         private HostFunction[] hostFunctions = new HostFunction[0];
         private Logger logger;
@@ -31,10 +35,6 @@ public class Plugin {
         public Plugin build() {
             return new Plugin(manifest, hostFunctions, logger);
         }
-    }
-
-    public static Builder ofManifest(Manifest manifest) {
-        return new Builder(manifest);
     }
 
     private final Manifest manifest;
