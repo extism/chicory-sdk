@@ -1,65 +1,59 @@
 package org.extism.chicory.sdk;
 
-import java.nio.file.Path;
-
-class ManifestWasm {
-}
-
-class ManifestWasmBytes extends ManifestWasm {
-    final byte[] bytes;
-    public ManifestWasmBytes(byte[] bytes) {
-        this.bytes = bytes;
-    }
-}
-
-class ManifestWasmFile extends ManifestWasm {
-    final Path filePath;
-
-    public ManifestWasmFile(Path path) {
-        this.filePath = path;
-    }
-}
-
-class ManifestWasmPath extends ManifestWasm {
-    final String path;
-
-    public ManifestWasmPath(String path) {
-        this.path = path;
-    }
-}
-
-class ManifestWasmUrl extends ManifestWasm {
-    final String url;
-
-    public ManifestWasmUrl(String url) {
-        this.url = url;
-    }
-}
+import java.util.EnumSet;
+import java.util.List;
 
 public class Manifest {
+
+    public enum Validation {
+        Import, Type, All;
+    }
+
+    public static class Options {
+        boolean aot;
+        EnumSet<Validation> validationFlags = EnumSet.noneOf(Validation.class);
+
+        public Options withAoT() {
+            this.aot = true;
+            return this;
+        }
+
+        public Options withValidation(Validation... vs) {
+            this.validationFlags.addAll(List.of(vs));
+            return this;
+        }
+    }
+
+
+    public static Builder ofWasms(ManifestWasm... wasms) {
+        return new Builder(wasms);
+    }
+
+    public static class Builder {
+        final ManifestWasm[] wasms;
+        private Options options;
+        private String name;
+
+        private Builder(ManifestWasm[] manifestWasms) {
+            this.wasms = manifestWasms;
+        }
+
+        public Builder withOptions(Options opts) {
+            this.options = opts;
+            return this;
+        }
+
+        public Manifest build() {
+            return new Manifest(wasms, name, options);
+        }
+
+    }
+
     final ManifestWasm[] wasms;
+    final Manifest.Options options;
 
-    public static Manifest fromPath(String path) {
-        var wasm = new ManifestWasmPath(path);
-        return new Manifest(new ManifestWasm[]{wasm});
-    }
-
-    public static Manifest fromUrl(String url) {
-        var wasm = new ManifestWasmUrl(url);
-        return new Manifest(new ManifestWasm[]{wasm});
-    }
-
-    public static Manifest fromFilePath(Path path) {
-        var wasm = new ManifestWasmFile(path);
-        return new Manifest(new ManifestWasm[]{wasm});
-    }
-
-    public static Manifest fromBytes(byte[] bytes) {
-        var wasm = new ManifestWasmBytes(bytes);
-        return new Manifest(new ManifestWasm[]{wasm});
-    }
-
-    Manifest(ManifestWasm[] wasms) {
+    Manifest(ManifestWasm[] wasms, String name, Manifest.Options opts) {
         this.wasms = wasms;
+        this.options = opts;
     }
 }
