@@ -1,43 +1,67 @@
 package org.extism.chicory.sdk;
 
 import com.dylibso.chicory.aot.AotMachine;
-import com.dylibso.chicory.runtime.Module;
+import com.dylibso.chicory.runtime.FunctionSignature;
+import com.dylibso.chicory.runtime.FunctionSignatureBundle;
+import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.wasm.Module;
+import com.dylibso.chicory.wasm.Parser;
+import com.dylibso.chicory.wasm.types.ExternalType;
+import com.dylibso.chicory.wasm.types.FunctionType;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ChicoryModule {
 
-    public static Module.Builder builderFrom(ManifestWasm m, Manifest.Options opts) {
-        Module.Builder mb = fromWasm(m);
-        return withOptions(mb, opts);
+    public static Instance.Builder builderFrom(ManifestWasm mw, Manifest.Options opts) {
+        Module m = fromWasm(mw);
+        return withOptions(m, opts);
     }
 
-    private static Module.Builder fromWasm(ManifestWasm m) {
+    public static Module fromWasm(ManifestWasm m) {
         if (m instanceof ManifestWasmBytes) {
             ManifestWasmBytes mwb = (ManifestWasmBytes) m;
-            return Module.builder(mwb.bytes);
+            return Parser.parse(mwb.bytes);
         } else if (m instanceof ManifestWasmPath) {
             ManifestWasmPath mwp = (ManifestWasmPath) m;
-            return Module.builder(mwp.path);
+            return Parser.parse(Path.of(mwp.path));
         } else if (m instanceof ManifestWasmFile) {
             ManifestWasmFile mwf = (ManifestWasmFile) m;
-            return Module.builder(mwf.filePath);
+            return Parser.parse(mwf.filePath);
         } else if (m instanceof ManifestWasmUrl) {
             ManifestWasmUrl mwu = (ManifestWasmUrl) m;
-            return Module.builder(mwu.getUrlAsStream());
+            return Parser.parse(mwu.getUrlAsStream());
         } else {
             throw new IllegalArgumentException("Unknown ManifestWasm type " + m.getClass());
         }
     }
 
-    private static Module.Builder withOptions(Module.Builder mb, Manifest.Options opts) {
+    public static FunctionSignatureBundle toSignatureBundle(String name, Module module) {
+        List<FunctionSignature> signatures = new ArrayList<>();
+        var exportSection = module.exportSection();
+        for (int i = 0; i < exportSection.exportCount(); i++) {
+            var export = exportSection.getExport(i);
+            if (export.exportType() == ExternalType.FUNCTION) {
+                var type = module.functionSection().getFunctionType(export.index(), module.typeSection());
+                signatures.add(new FunctionSignature(name, export.name(), type.params(), type.returns()));
+            }
+        }
+        return new FunctionSignatureBundle(name, signatures.toArray(new FunctionSignature[signatures.size()]));
+    }
+
+    private static Instance.Builder withOptions(Module m, Manifest.Options opts) {
+        Instance.Builder builder = Instance.builder(m);
         if (opts == null) {
-            return mb;
+            return builder;
         }
         if (opts.aot) {
-            mb.withMachineFactory(AotMachine::new);
+            builder.withMachineFactory(AotMachine::new);
         }
         if (!opts.validationFlags.isEmpty()) {
             throw new UnsupportedOperationException("Validation flags are not supported yet");
         }
-        return mb;
+        return builder;
     }
 }

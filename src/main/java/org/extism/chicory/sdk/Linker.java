@@ -2,11 +2,11 @@ package org.extism.chicory.sdk;
 
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.runtime.HostFunction;
-import com.dylibso.chicory.runtime.HostImports;
+import com.dylibso.chicory.runtime.HostModule;
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.runtime.Module;
-import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
+import com.dylibso.chicory.wasm.Module;
+
 
 /**
  * Links together the modules in the given manifest with the given host functions
@@ -36,24 +36,23 @@ class Linker {
      *
      */
     public LinkedModules link() {
-        WasiPreview1 wasip1 = wasip1();
+        var wasip1 = wasip1();
         Kernel kernel = kernel();
 
-        HostFunction[] allHostFs = concat(kernel.toHostFunctions(), this.hostFunctions, wasip1.toHostFunctions());
-        HostImports hostImports = new HostImports(allHostFs);
+        Store store = new Store();
+
+        store.register(wasip1);
+        store.register(Kernel.IMPORT_MODULE_NAME, kernel.module());
 
 
         ManifestWasm[] wasms = this.manifest.wasms;
-        Module.Builder[] moduleBuilders = new Module.Builder[wasms.length];
         int mainModule = -1;
 
         for (int i = 0; i < wasms.length; i++) {
             ManifestWasm wasm = wasms[i];
             boolean isLast = i == wasms.length - 1;
             String moduleName = wasm.name;
-            Module.Builder mb = ChicoryModule.builderFrom(wasm, this.manifest.options)
-                    .withLogger(logger)
-                    .withHostImports(hostImports);
+            Module m = ChicoryModule.fromWasm(wasm);
 
             if ((moduleName == null || moduleName.isEmpty() || isLast) && mainModule < 0) {
                 moduleName = "main";
@@ -63,16 +62,16 @@ class Linker {
             checkCollision(moduleName, wasms);
             checkHash(moduleName, wasm);
 
-            moduleBuilders[i] = mb;
+            store.register(moduleName, m);
         }
 
-        return new LinkedModules(kernel, moduleBuilders, mainModule);
+        store.resolve();
+
+        return new LinkedModules(kernel, store, mainModule);
     }
 
-    private WasiPreview1 wasip1() {
-        var options = WasiOptions.builder().build();
-        var wasi = new WasiPreview1(logger, options);
-        return wasi;
+    private HostModule wasip1() {
+        return WasiPreview1.toHostModule();
     }
 
     private Kernel kernel() {
@@ -118,24 +117,27 @@ class Linker {
 class LinkedModules {
 
     private final Kernel kernel;
-    private final Module.Builder[] moduleBuilders;
+    private final Store store;
     private final int mainModule;
 
-    LinkedModules(Kernel kernel, Module.Builder[] moduleBuilders, int mainModule) {
+    LinkedModules(Kernel kernel, Store store, int mainModule) {
         this.kernel = kernel;
-        this.moduleBuilders = moduleBuilders;
+        this.store = store;
         this.mainModule = mainModule;
     }
 
     public Plugin toPlugin() {
-        Instance[] instances = new Instance[moduleBuilders.length];
-        Module.Builder[] builders = this.moduleBuilders;
-        for (int i = 0; i < builders.length; i++) {
-            Module.Builder mb = builders[i];
-            Module m = mb.build();
-            instances[i] = m.instantiate();
-        }
+        throw new UnsupportedOperationException("todo");
 
-        return new Plugin(kernel, instances, mainModule);
+//        Instance[] instances = null;
+//        Instance[] instances = new Instance[moduleBuilders.length];
+//        Instance.Builder[] builders = this.moduleBuilders;
+//        for (int i = 0; i < builders.length; i++) {
+//            Instance.Builder mb = builders[i];
+//            Instance m = mb.build();
+//            instances[i] = m.initialize(false);
+//        }
+//
+//        return new Plugin(kernel, instances, mainModule);
     }
 }

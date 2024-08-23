@@ -1,23 +1,19 @@
 package org.extism.chicory.sdk;
 
-import static com.dylibso.chicory.wasm.types.Value.*;
-
 import com.dylibso.chicory.aot.AotMachine;
 import com.dylibso.chicory.log.Logger;
-import com.dylibso.chicory.log.SystemLogger;
-import com.dylibso.chicory.runtime.ExportFunction;
-import com.dylibso.chicory.runtime.HostFunction;
-import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.runtime.Module;
-import com.dylibso.chicory.wasm.types.Value;
-import com.dylibso.chicory.wasm.types.ValueType;
+import com.dylibso.chicory.runtime.*;
 import com.dylibso.chicory.runtime.Memory;
+import com.dylibso.chicory.wasm.Module;
+import com.dylibso.chicory.wasm.Parser;
+import com.dylibso.chicory.wasm.types.*;
 
-import java.util.HashMap;
 import java.util.List;
 
+import static com.dylibso.chicory.wasm.types.Value.i64;
+
 public class Kernel {
-    private static final String IMPORT_MODULE_NAME = "extism:host/env";
+    public static final String IMPORT_MODULE_NAME = "extism:host/env";
     private final Memory memory;
     private final ExportFunction alloc;
     private final ExportFunction free;
@@ -39,19 +35,21 @@ public class Kernel {
     private final ExportFunction errorSet;
     private final ExportFunction errorGet;
     private final ExportFunction memoryBytes;
+    private final Module module;
 
     public Kernel(Logger logger, Manifest.Options opts) {
         var kernelStream = getClass().getClassLoader().getResourceAsStream("extism-runtime.wasm");
+        this.module = Parser.parse(kernelStream);
 
-        var moduleBuilder = Module.builder(kernelStream).withLogger(logger);
+        var instanceBuilder = Instance.builder(module);
 
         if (opts != null) {
             if (opts.aot) {
-                moduleBuilder = moduleBuilder.withMachineFactory(AotMachine::new);
+                instanceBuilder = instanceBuilder.withMachineFactory(AotMachine::new);
             }
         }
 
-        Instance kernel = moduleBuilder.build().instantiate();
+        var kernel = instanceBuilder.build().initialize(true);
         memory = kernel.memory();
         alloc = kernel.export("alloc");
         free = kernel.export("free");
@@ -75,6 +73,10 @@ public class Kernel {
         memoryBytes = kernel.export("memory_bytes");
     }
 
+    public Module module() {
+        return module;
+    }
+
     public void setInput(byte[] input) {
         var ptr = alloc.apply(i64(input.length))[0];
         memory.write(ptr.asInt(), input);
@@ -87,217 +89,135 @@ public class Kernel {
         return memory.readBytes(ptr.asInt(), len.asInt());
     }
 
-    public HostFunction[] toHostFunctions() {
-        var hostFunctions = new HostFunction[23];
-        int count = 0;
+    public HostModule toHostModule() {
+        FunctionSection functionSection = module.functionSection();
+        for (int i = 0; i < module.exportSection().exportCount(); i++) {
 
-        hostFunctions[count++] =
-                new HostFunction(
-                        (Instance instance, Value... args) -> alloc.apply(args),
-                        IMPORT_MODULE_NAME,
+            Export export = module.exportSection().getExport(i);
+            if (export.exportType() == ExternalType.FUNCTION) {
+                throw new UnsupportedOperationException("todo");
+            }
+
+            FunctionType functionType = functionSection.getFunctionType(i, module.typeSection());
+        }
+
+        return HostModule.builder(IMPORT_MODULE_NAME)
+        .withFunctionSignature(
                         "alloc",
                         List.of(ValueType.I64),
-                        List.of(ValueType.I64));
-
-        hostFunctions[count++] =
-                new HostFunction(
-                        (Instance instance, Value... args) -> free.apply(args),
-                        IMPORT_MODULE_NAME,
+                        List.of(ValueType.I64))
+        .withFunctionSignature(
                         "free",
                         List.of(ValueType.I64),
-                        List.of());
-
-        hostFunctions[count++] =
-                new HostFunction(
-                        (Instance instance, Value... args) -> length.apply(args),
-                        IMPORT_MODULE_NAME,
+                        List.of())
+        .withFunctionSignature(
                         "length",
                         List.of(ValueType.I64),
-                        List.of(ValueType.I64));
-
-        hostFunctions[count++] =
-                new HostFunction(
-                        (Instance instance, Value... args) -> lengthUnsafe.apply(args),
-                        IMPORT_MODULE_NAME,
+                        List.of(ValueType.I64))
+        .withFunctionSignature(
                         "length_unsafe",
                         List.of(ValueType.I64),
-                        List.of(ValueType.I64));
-
-        hostFunctions[count++] =
-                new HostFunction(
-                        (Instance instance, Value... args) -> loadU8.apply(args),
-                        IMPORT_MODULE_NAME,
+                        List.of(ValueType.I64))
+        .withFunctionSignature(
                         "load_u8",
                         List.of(ValueType.I64),
-                        List.of(ValueType.I32));
-
-        hostFunctions[count++] =
-                new HostFunction(
-                        (Instance instance, Value... args) -> loadU64.apply(args),
-                        IMPORT_MODULE_NAME,
+                        List.of(ValueType.I32))
+        .withFunctionSignature(
                         "load_u64",
                         List.of(ValueType.I64),
-                        List.of(ValueType.I64));
-
-        hostFunctions[count++] =
-                new HostFunction(
-                        (Instance instance, Value... args) -> inputLoadU8.apply(args),
-                        IMPORT_MODULE_NAME,
+                        List.of(ValueType.I64))
+        .withFunctionSignature(
                         "input_load_u8",
                         List.of(ValueType.I64),
-                        List.of(ValueType.I32));
-
-        hostFunctions[count++] =
-                new HostFunction(
-                        (Instance instance, Value... args) -> inputLoadU64.apply(args),
-                        IMPORT_MODULE_NAME,
+                        List.of(ValueType.I32))
+        .withFunctionSignature(
                         "input_load_u64",
                         List.of(ValueType.I64),
-                        List.of(ValueType.I64));
-
-        hostFunctions[count++] =
-                new HostFunction(
-                        (Instance instance, Value... args) -> storeU8.apply(args),
-                        IMPORT_MODULE_NAME,
+                        List.of(ValueType.I64))
+        .withFunctionSignature(
                         "store_u8",
                         List.of(ValueType.I64, ValueType.I32),
-                        List.of());
-
-        hostFunctions[count++] =
-                new HostFunction(
-                        (Instance instance, Value... args) -> storeU64.apply(args),
-                        IMPORT_MODULE_NAME,
+                        List.of())
+        .withFunctionSignature(
                         "store_u64",
                         List.of(ValueType.I64, ValueType.I64),
-                        List.of());
-
-        hostFunctions[count++] =
-                new HostFunction(
-                        (Instance instance, Value... args) -> inputSet.apply(args),
-                        IMPORT_MODULE_NAME,
+                        List.of())
+        .withFunctionSignature(
                         "input_set",
                         List.of(ValueType.I64, ValueType.I64),
-                        List.of());
-
-        hostFunctions[count++] =
-                new HostFunction(
-                        (Instance instance, Value... args) -> inputLen.apply(args),
-                        IMPORT_MODULE_NAME,
+                        List.of())
+        .withFunctionSignature(
                         "input_length",
                         List.of(),
-                        List.of(ValueType.I64));
-
-        hostFunctions[count++] =
-                new HostFunction(
-                        (Instance instance, Value... args) -> inputOffset.apply(args),
-                        IMPORT_MODULE_NAME,
+                        List.of(ValueType.I64))
+        .withFunctionSignature(
                         "input_offset",
                         List.of(),
-                        List.of(ValueType.I64));
-
-        hostFunctions[count++] =
-                new HostFunction(
-                        (Instance instance, Value... args) -> outputSet.apply(args),
-                        IMPORT_MODULE_NAME,
+                        List.of(ValueType.I64))
+        .withFunctionSignature(
                         "output_set",
                         List.of(ValueType.I64, ValueType.I64),
-                        List.of());
-
-        hostFunctions[count++] =
-                new HostFunction(
-                        (Instance instance, Value... args) -> outputLen.apply(args),
-                        IMPORT_MODULE_NAME,
+                        List.of())
+        .withFunctionSignature(
                         "output_length",
                         List.of(),
-                        List.of(ValueType.I64));
-
-        hostFunctions[count++] =
-                new HostFunction(
-                        (Instance instance, Value... args) -> outputOffset.apply(args),
-                        IMPORT_MODULE_NAME,
+                        List.of(ValueType.I64))
+        .withFunctionSignature(
                         "output_offset",
                         List.of(),
-                        List.of(ValueType.I64));
-
-        hostFunctions[count++] =
-                new HostFunction(
-                        (Instance instance, Value... args) -> reset.apply(args),
-                        IMPORT_MODULE_NAME,
+                        List.of(ValueType.I64))
+        .withFunctionSignature(
                         "reset",
                         List.of(),
-                        List.of());
-
-        hostFunctions[count++] =
-                new HostFunction(
-                        (Instance instance, Value... args) -> errorSet.apply(args),
-                        IMPORT_MODULE_NAME,
+                        List.of())
+        .withFunctionSignature(
                         "error_set",
                         List.of(ValueType.I64),
-                        List.of());
-
-        hostFunctions[count++] =
-                new HostFunction(
-                        (Instance instance, Value... args) -> errorGet.apply(args),
-                        IMPORT_MODULE_NAME,
+                        List.of())
+        .withFunctionSignature(
                         "error_get",
                         List.of(),
-                        List.of(ValueType.I64));
-
-        hostFunctions[count++] =
-                new HostFunction(
-                        (Instance instance, Value... args) -> memoryBytes.apply(args),
-                        IMPORT_MODULE_NAME,
+                        List.of(ValueType.I64))
+        .withFunctionSignature(
                         "memory_bytes",
                         List.of(),
-                        List.of(ValueType.I64));
-
-        var vars = new HashMap<String, byte[]>();
-
-        hostFunctions[count++] =
-                new HostFunction(
-                        (Instance instance, Value... args) -> {
-                            // System.out.println("_var_get " + args);
-                            //                    var keyLen = Length.apply(args[0])[0];
-                            //                    var key = memory.getString(args[0].asInt(),
-                            // keyLen.asInt());
-                            //                    var value = vars.get(key);
-                            return new Value[] {i64(0)};
-                        },
-                        IMPORT_MODULE_NAME,
+                        List.of(ValueType.I64))
+        .withFunctionSignature(
                         "var_get",
                         List.of(ValueType.I64, ValueType.I64),
-                        List.of(ValueType.I64));
-
-        hostFunctions[count++] =
-                new HostFunction(
-                        (Instance instance, Value... args) -> {
-                            // System.out.println("_var_set" + args);
-                            //                    var keyLen = Length.apply(args[0])[0];
-                            //                    var key = memory.getString(args[0].asInt(),
-                            // keyLen.asInt());
-                            //                    var value = vars.get(key);
-                            return null;
-                        },
-                        IMPORT_MODULE_NAME,
+                        List.of(ValueType.I64))
+        .withFunctionSignature(
                         "var_set",
                         List.of(ValueType.I64, ValueType.I64),
-                        List.of());
-
-        hostFunctions[count++] =
-                new HostFunction(
-                        (Instance instance, Value... args) -> {
-                            // System.out.println("_config_get" + args);
-                            //                    var keyLen = Length.apply(args[0])[0];
-                            //                    var key = memory.getString(args[0].asInt(),
-                            // keyLen.asInt());
-                            //                    var value = vars.get(key);
-                            return new Value[] {i64(0)};
-                        },
-                        IMPORT_MODULE_NAME,
+                        List.of())
+        .withFunctionSignature(
                         "config_get",
                         List.of(ValueType.I64),
-                        List.of(ValueType.I64));
+                        List.of(ValueType.I64)).build();
+    }
 
-        return hostFunctions;
+    public HostFunction[] toHostFunctions() {
+
+        return HostModuleInstance.builder(toHostModule())
+                .bind("alloc", (Instance inst, Value[] args) -> alloc.apply(args))
+                .bind("free", (Instance inst, Value[] args) -> free.apply(args))
+                .bind("length", (Instance inst, Value[] args) -> length.apply(args))
+                .bind("length_unsafe", (Instance inst, Value[] args) -> lengthUnsafe.apply(args))
+                .bind("load_u8", (Instance inst, Value[] args) -> loadU8.apply(args))
+                .bind("load_u64", (Instance inst, Value[] args) -> loadU64.apply(args))
+                .bind("input_load_u8", (Instance inst, Value[] args) -> inputLoadU8.apply(args))
+                .bind("input_load_u64", (Instance inst, Value[] args) -> inputLoadU64.apply(args))
+                .bind("store_u8", (Instance inst, Value[] args) -> storeU8.apply(args))
+                .bind("store_u64", (Instance inst, Value[] args) -> storeU64.apply(args))
+                .bind("input_set", (Instance inst, Value[] args) -> inputSet.apply(args))
+                .bind("input_len", (Instance inst, Value[] args) -> inputLen.apply(args))
+                .bind("input_offset", (Instance inst, Value[] args) -> inputOffset.apply(args))
+                .bind("output_len", (Instance inst, Value[] args) -> outputLen.apply(args))
+                .bind("output_offset", (Instance inst, Value[] args) -> outputOffset.apply(args))
+                .bind("output_set", (Instance inst, Value[] args) -> outputSet.apply(args))
+                .bind("reset", (Instance inst, Value[] args) -> reset.apply(args))
+                .bind("error_set", (Instance inst, Value[] args) -> errorSet.apply(args))
+                .bind("error_set", (Instance inst, Value[] args) -> errorGet.apply(args))
+                .bind("memory_bytes", (Instance inst, Value[] args) -> memoryBytes.apply(args)).build().hostFunctions();
     }
 }

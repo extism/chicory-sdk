@@ -57,6 +57,7 @@ public class Plugin {
         this.instances = instances;
         this.mainModule = mainModule;
         this.mainInstance = instances[mainModule];
+        mainInstance.initialize(true);
     }
 
     public byte[] call(String funcName, byte[] input) {
