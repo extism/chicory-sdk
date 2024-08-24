@@ -2,8 +2,12 @@ package org.extism.chicory.sdk;
 
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
+import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.runtime.Memory;
+
+import static com.dylibso.chicory.wasm.types.Value.i64;
 
 /**
  * A Plugin instance.
@@ -42,21 +46,17 @@ public class Plugin {
         public Plugin build() {
             var logger = this.logger == null ? new SystemLogger() : this.logger;
             Linker linker = new Linker(this.manifest, this.hostFunctions, logger);
-            LinkedModules linked = linker.link();
-            return linked.toPlugin();
+            return linker.link();
         }
     }
 
     private final Kernel kernel;
-    private final Instance[] instances;
-    private final int mainModule;
+
     private final Instance mainInstance;
 
-    Plugin(Kernel kernel, Instance[] instances, int mainModule) {
+    Plugin(Instance main, Kernel kernel) {
         this.kernel = kernel;
-        this.instances = instances;
-        this.mainModule = mainModule;
-        this.mainInstance = instances[mainModule];
+        this.mainInstance = main;
         mainInstance.initialize(true);
     }
 
@@ -70,5 +70,4 @@ public class Plugin {
             throw new ExtismException("Failed");
         }
     }
-
 }

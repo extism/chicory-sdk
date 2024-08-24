@@ -1,117 +1,121 @@
 package org.extism.chicory.sdk;
 
-import com.dylibso.chicory.runtime.FunctionSignature;
-import com.dylibso.chicory.runtime.FunctionSignatureBundle;
-import com.dylibso.chicory.runtime.HostFunction;
-import com.dylibso.chicory.runtime.HostModule;
+import com.dylibso.chicory.runtime.*;
 import com.dylibso.chicory.wasm.Module;
-import com.dylibso.chicory.wasm.types.Export;
-import com.dylibso.chicory.wasm.types.ExternalType;
-import com.dylibso.chicory.wasm.types.Import;
+import com.dylibso.chicory.wasm.types.*;
 
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.util.stream.Collectors.groupingBy;
+import static org.extism.chicory.sdk.ChicoryModule.bind;
+
 // TODO the store should also store the Modules.
 public class Store {
-    private final Map<String, Namespace<Export>> exportedFunctions = new HashMap<>();
-    private final Map<String, FunctionSignatureBundle> functionSignatures = new HashMap<>();
-    private final Map<String, List<Import>> imports = new HashMap<>();
+    static Logger logger = Logger.getAnonymousLogger();
+    //    private final Map<String, Namespace<Export>> exportedFunctions = new HashMap<>();
+    private final Map<String, TModule> modules = new HashMap<>();
+    private final Map<String, TInstance> instances = new HashMap<>();
+    private final Map<String, List<FunctionSignature>> importedFunctions = new HashMap<>();
     private final Map<String, List<HostFunction>> resolvedImports = new HashMap<>();
 
 
     public Store register(String name, Module module) {
-        var signatureBundle = ChicoryModule.toSignatureBundle(name, module);
-        this.register(signatureBundle);
+        // Exports are converted into a signature bundle.
+        this.modules.put(name, new TModule.ChicoryModule(name, module));
 
         var importSection = module.importSection();
         for (int i = 0; i < importSection.importCount(); i++) {
             Import ii = importSection.getImport(i);
             if (ii.importType() == ExternalType.FUNCTION) {
-                this.imports.computeIfAbsent(
-                        name, k -> new ArrayList<>())
-                        .add(ii);
-            } else {
-                // ignore for now
-            }
+                FunctionImport fi = (FunctionImport) ii;
+                var tidx = fi.typeIndex();
+                FunctionType type = module.typeSection().getType(tidx);
+                FunctionSignature fsig = new FunctionSignature(fi.moduleName(), fi.name(), type.params(), type.returns());
+                this.importedFunctions.computeIfAbsent(name, k -> new ArrayList<>()).add(fsig);
+            } // else ignore for now
         }
         return this;
     }
 
 
     public void register(HostModule hostModule) {
-        this.functionSignatures.put(hostModule.name(), (FunctionSignatureBundle) hostModule); // FIXME
+        // HostModules to not declare imports.
+        this.modules.put(hostModule.name(), new TModule.ChicoryHostModule(hostModule));
     }
 
     public void resolve() {
-        for (var module : imports.entrySet()) {
+        for (var module : importedFunctions.entrySet()) {
             // Name of the module importing the symbol.
             String moduleName = module.getKey();
             var resolvedImports = new ArrayList<HostFunction>();
             this.resolvedImports.put(moduleName, resolvedImports);
-            List<Import> imports = module.getValue();
-            for (Import ii : imports) {
+            var imports = module.getValue();
+            for (var ii : imports) {
                 // Name of the module whose symbol is being imported.
                 String importedModuleName = ii.moduleName();
                 String symbolName = ii.name();
-                boolean found = lookupSymbol(exportedFunctions, importedModuleName, symbolName);
-                if (found) {
-                    Logger.getAnonymousLogger().log(Level.INFO, String.format("Found HOST symbol %s.%s for module %s", importedModuleName, symbolName, moduleName));
+                TModule tModule = modules.get(importedModuleName);
+                if (tModule.lookup(symbolName) != null) {
+                    logger.log(Level.INFO, String.format("Found EXPORTED symbol %s.%s for module %s", importedModuleName, symbolName, moduleName));
                     continue;
                 }
-
-                found = lookupSymbolInBundle(functionSignatures, importedModuleName, symbolName);
-                if (found) {
-                    Logger.getAnonymousLogger().log(Level.INFO, String.format("Found EXPORTED symbol %s.%s for module %s", importedModuleName, symbolName, moduleName));
-                    continue;
-                }
-
-                Logger.getAnonymousLogger().log(Level.WARNING, String.format("NOT FOUND: symbol %s.%s for module %s", importedModuleName, symbolName, moduleName));
+                logger.log(Level.WARNING, String.format("NOT FOUND: symbol %s.%s for module %s", importedModuleName, symbolName, moduleName));
             }
         }
     }
 
-    private <T> boolean lookupSymbol(Map<String, Namespace<T>> nss, String importedModuleName, String symbolName) {
-        if (nss.containsKey(importedModuleName)) {
-            var ns = nss.get(importedModuleName);
-            return ns.lookup(symbolName).isPresent();
-        }
-        return false;
+    public Instance instantiate(String name) {
+        return instantiate(modules.get(name)).asInstance();
     }
 
-    private <T> boolean lookupSymbolInBundle(Map<String, FunctionSignatureBundle> nss, String importedModuleName, String symbolName) {
-        if (nss.containsKey(importedModuleName)) {
-            var ns = nss.get(importedModuleName);
-            for (FunctionSignature signature : ns.signatures()) {
-                if (signature.name().equals(symbolName)) {
-                    return true;
+    public Instance instantiate(String name, Module m) {
+        return instantiate(new TModule.ChicoryModule(name, m)).asInstance();
+    }
+
+    public TInstance instantiate(TModule m) {
+        var importedSigs = this.importedFunctions.get(m.name());
+        TInstance tInstance = instances.get(m.name());
+        if (tInstance != null) {
+            return tInstance;
+        }
+
+        // If all imports are satisfied, then we can instantiate.
+        if (importedSigs == null) {
+            if (m.isModule()) {
+                // No imports: trivially satisfied.
+                var instance = new TInstance.ChicoryModule(
+                        m.name(), Instance.builder(m.asModule()).build().initialize(true));
+                this.instances.put(m.name(), instance);
+                return instance;
+            } else {
+                throw new UnsupportedOperationException("Cannot instantiate host modules yet");
+            }
+        } else {
+            var sigsByModule = importedSigs.stream().collect(groupingBy(FunctionSignature::moduleName));
+            for (String mname : sigsByModule.keySet()) {
+                TModule tModule = this.modules.get(mname);
+                instantiate(tModule);
+            }
+            // All imports have been now satisfied (or they failed), we can now instantiate.
+            List<HostFunction> satisfiedImports = new ArrayList<>();
+            for (String mname : sigsByModule.keySet()) {
+                var instance = this.instances.get(mname);
+                for (var sig : sigsByModule.get(mname)) {
+                    HostFunction f = bind(sig, ChicoryModule.asHandle(instance.asInstance().export(sig.name())));
+                    satisfiedImports.add(f);
                 }
             }
-            return false;
+
+            Instance instance = Instance.builder(m.asModule())
+                    .withHostImports(new HostImports(satisfiedImports.toArray(new HostFunction[0]))).build()
+                    .initialize(true);
+            TInstance.ChicoryModule tinstance = new TInstance.ChicoryModule(m.name(), instance);
+            this.instances.put(m.name(), tinstance);
+            return tinstance;
         }
-        return false;
-    }
 
-}
-
-
-class Namespace<T> {
-    private final String name;
-    private final Map<String, T> items;
-
-    Namespace(String name) {
-        this.name = name;
-        this.items = new HashMap<>();
-    }
-
-    public Namespace<T> register(String itemId, T value) {
-        items.put(itemId, value);
-        return this;
-    }
-
-    public Optional<T> lookup(String itemId) {
-        return Optional.ofNullable(items.get(itemId));
     }
 
 }

@@ -2,7 +2,6 @@ package org.extism.chicory.sdk;
 
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.runtime.HostFunction;
-import com.dylibso.chicory.runtime.HostModule;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasi.WasiPreview1;
 import com.dylibso.chicory.wasm.Module;
@@ -12,8 +11,7 @@ import com.dylibso.chicory.wasm.Module;
  * Links together the modules in the given manifest with the given host functions
  * and predefined support modules (e.g. the {@link Kernel}.
  * <p>
- * Returns a {@link LinkedModules} instance, which in turn can be converted
- * into a {@link Plugin}.
+ * Returns a {@link Plugin}.
  */
 class Linker {
     public static final String EXTISM_NS = "extism:host/env";
@@ -35,15 +33,14 @@ class Linker {
      *  - Otherwise the last module listed is the main module
      *
      */
-    public LinkedModules link() {
-        var wasip1 = wasip1();
-        Kernel kernel = kernel();
+    public Plugin link() {
+        var wasip1 = WasiPreview1.toHostModule();
+        var kernel = Kernel.module();
 
         Store store = new Store();
 
         store.register(wasip1);
-        store.register(Kernel.IMPORT_MODULE_NAME, kernel.module());
-
+        store.register(Kernel.IMPORT_MODULE_NAME, kernel);
 
         ManifestWasm[] wasms = this.manifest.wasms;
         int mainModule = -1;
@@ -67,16 +64,10 @@ class Linker {
 
         store.resolve();
 
-        return new LinkedModules(kernel, store, mainModule);
-    }
+        Instance kernelInstance = store.instantiate(Kernel.IMPORT_MODULE_NAME);
+        Instance main = store.instantiate("main");
+        return new Plugin(main, new Kernel(kernelInstance));
 
-    private HostModule wasip1() {
-        return WasiPreview1.toHostModule();
-    }
-
-    private Kernel kernel() {
-        var kernel = new Kernel(logger, manifest.options);
-        return kernel;
     }
 
     private static HostFunction[] concat(
@@ -109,35 +100,3 @@ class Linker {
 
 }
 
-/**
- * A collection of modules that have been successfully linked together.
- * LinkedModules can be converted to a Plugin using the {@link #toPlugin()}
- * method.
- */
-class LinkedModules {
-
-    private final Kernel kernel;
-    private final Store store;
-    private final int mainModule;
-
-    LinkedModules(Kernel kernel, Store store, int mainModule) {
-        this.kernel = kernel;
-        this.store = store;
-        this.mainModule = mainModule;
-    }
-
-    public Plugin toPlugin() {
-        throw new UnsupportedOperationException("todo");
-
-//        Instance[] instances = null;
-//        Instance[] instances = new Instance[moduleBuilders.length];
-//        Instance.Builder[] builders = this.moduleBuilders;
-//        for (int i = 0; i < builders.length; i++) {
-//            Instance.Builder mb = builders[i];
-//            Instance m = mb.build();
-//            instances[i] = m.initialize(false);
-//        }
-//
-//        return new Plugin(kernel, instances, mainModule);
-    }
-}
