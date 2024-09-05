@@ -113,7 +113,8 @@ public class DependencyGraph {
                 String moduleName = imp.moduleName();
                 String symbolName = imp.name();
                 if (!edges.containsKey(moduleName) || !edges.get(moduleName).contains(symbolName)) {
-                    logger.debug(String.format("Cannot find symbol: %s.%s\n", moduleName, symbolName));
+                    logger.info(String.format("Cannot find symbol: %s.%s\n", moduleName, symbolName));
+                    valid = false;
                 }
             }
         }
@@ -175,12 +176,7 @@ public class DependencyGraph {
             // and instantiate.
             if (satisfied) {
                 unresolved.pop();
-                Instance instance =
-                        ChicoryModule.instanceWithOptions(m, this.options)
-                                .withHostImports(store.toHostImports())
-                                .build();
-                this.store.register(moduleId, instance);
-                this.instances.put(moduleId, instance);
+                instantiate(moduleId);
             }
 
         }
@@ -194,7 +190,25 @@ public class DependencyGraph {
             trampoline.resolveFunction(ef);
         }
 
+        // We can now initialize all modules.
+        for (var inst : this.instances.values()) {
+            inst.initialize(true);
+        }
+
         return this.getMainInstance();
+    }
+
+    private Instance instantiate(String moduleId) {
+        Module m = this.modules.get(moduleId);
+        Objects.requireNonNull(m);
+        Instance instance =
+                ChicoryModule.instanceWithOptions(m, this.options)
+                        .withHostImports(store.toHostImports())
+                        .withStart(false)
+                        .build();
+        this.store.register(moduleId, instance);
+        this.instances.put(moduleId, instance);
+        return instance;
     }
 
     private void registerTrampoline(FunctionImport f, Module m) {
@@ -219,7 +233,11 @@ public class DependencyGraph {
      * @return a named instance with the given name.
      */
     public Instance getInstance(String moduleName) {
-        return instances.get(moduleName);
+        if (instances.containsKey(moduleName)) {
+            return instances.get(moduleName);
+        } else {
+            return instantiate(moduleName);
+        }
     }
 
     /**
