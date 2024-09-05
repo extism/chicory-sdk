@@ -1,14 +1,10 @@
 package org.extism.chicory.sdk;
 
-import com.dylibso.chicory.aot.AotMachine;
-import com.dylibso.chicory.log.Logger;
-import com.dylibso.chicory.runtime.*;
+import com.dylibso.chicory.runtime.ExportFunction;
+import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.Parser;
-import com.dylibso.chicory.wasm.types.*;
-
-import java.util.List;
 
 import static com.dylibso.chicory.wasm.types.Value.i64;
 

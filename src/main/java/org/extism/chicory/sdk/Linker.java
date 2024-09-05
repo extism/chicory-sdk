@@ -3,6 +3,7 @@ package org.extism.chicory.sdk;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.runtime.Store;
 import com.dylibso.chicory.wasi.WasiPreview1;
 import com.dylibso.chicory.wasm.Module;
 
@@ -34,52 +35,49 @@ class Linker {
      *
      */
     public Plugin link() {
-        var wasip1 = WasiPreview1.toHostModule();
+        var wasip1 = new WasiPreview1(logger);
         var kernel = Kernel.module();
 
         Store store = new Store();
 
-        store.register(wasip1);
-        store.register(Kernel.IMPORT_MODULE_NAME, kernel);
+        store.addFunction(wasip1.toHostFunctions());
+        Instance kernelInstance =
+                store.instantiate(Kernel.IMPORT_MODULE_NAME, kernel);
 
         ManifestWasm[] wasms = this.manifest.wasms;
-        int mainModule = -1;
+        Instance mainModule = null;
+
+        sortWasms(wasms);
 
         for (int i = 0; i < wasms.length; i++) {
+            boolean isMain = false;
             ManifestWasm wasm = wasms[i];
             boolean isLast = i == wasms.length - 1;
             String moduleName = wasm.name;
             Module m = ChicoryModule.fromWasm(wasm);
 
-            if ((moduleName == null || moduleName.isEmpty() || isLast) && mainModule < 0) {
+            if ((moduleName == null || moduleName.isEmpty() || isLast) && mainModule == null) {
                 moduleName = "main";
-                mainModule = i;
+                isMain = true;
             }
 
             checkCollision(moduleName, wasms);
             checkHash(moduleName, wasm);
 
-            store.register(moduleName, m);
+            Instance instance = store.instantiate(moduleName, m);
+            if (isMain) {
+                mainModule = instance;
+            }
         }
 
-        store.resolve();
-
-        Instance kernelInstance = store.instantiate(Kernel.IMPORT_MODULE_NAME);
-        Instance main = store.instantiate("main");
-        return new Plugin(main, new Kernel(kernelInstance));
+        return new Plugin(mainModule, new Kernel(kernelInstance));
 
     }
 
-    private static HostFunction[] concat(
-            HostFunction[] kernelFuncs, HostFunction[] hostFunctions, HostFunction[] wasiHostFunctions) {
-        // concat list of host functions
-        var hostFuncList = new HostFunction[hostFunctions.length + kernelFuncs.length + wasiHostFunctions.length];
-        System.arraycopy(kernelFuncs, 0, hostFuncList, 0, kernelFuncs.length);
-        System.arraycopy(hostFunctions, 0, hostFuncList, kernelFuncs.length, hostFunctions.length);
-        System.arraycopy(wasiHostFunctions, 0, hostFuncList, kernelFuncs.length + hostFunctions.length, wasiHostFunctions.length);
-        return hostFuncList;
-    }
+    private void sortWasms(ManifestWasm[] wasms) {
+        Store store = new Store();
 
+    }
 
     /**
      * @throws ExtismException on name collision.
