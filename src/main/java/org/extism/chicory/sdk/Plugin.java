@@ -2,12 +2,8 @@ package org.extism.chicory.sdk;
 
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
-import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.runtime.Memory;
-
-import static com.dylibso.chicory.wasm.types.Value.i64;
 
 /**
  * A Plugin instance.

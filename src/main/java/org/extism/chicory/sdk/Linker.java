@@ -3,9 +3,7 @@ package org.extism.chicory.sdk;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.runtime.Store;
 import com.dylibso.chicory.wasi.WasiPreview1;
-import com.dylibso.chicory.wasm.Module;
 
 
 /**
@@ -26,57 +24,29 @@ class Linker {
         this.logger = logger;
     }
 
-    /*
-     * Try to find the main module:
-     *  - There is always one main module
-     *  - If a Wasm value has the Name field set to "main" then use that module
-     *  - If there is only one module in the manifest then that is the main module by default
-     *  - Otherwise the last module listed is the main module
-     *
-     */
     public Plugin link() {
-        var wasip1 = new WasiPreview1(logger);
-        var kernel = Kernel.module();
 
-        Store store = new Store();
+        var dg = new DependencyGraph(logger);
+        dg.setOptions(manifest.options);
 
-        store.addFunction(wasip1.toHostFunctions());
-        Instance kernelInstance =
-                store.instantiate(Kernel.IMPORT_MODULE_NAME, kernel);
+        // Register the Kernel module, usually not present in the manifest.
+        dg.registerModule(Kernel.IMPORT_MODULE_NAME, Kernel.module());
 
-        ManifestWasm[] wasms = this.manifest.wasms;
-        Instance mainModule = null;
+        // Register the WASI host functions.
+        dg.registerFunctions(new WasiPreview1(logger).toHostFunctions());
 
-        sortWasms(wasms);
+        // Register the user-provided host functions.
+        dg.registerFunctions(this.hostFunctions);
 
-        for (int i = 0; i < wasms.length; i++) {
-            boolean isMain = false;
-            ManifestWasm wasm = wasms[i];
-            boolean isLast = i == wasms.length - 1;
-            String moduleName = wasm.name;
-            Module m = ChicoryModule.fromWasm(wasm);
+        // Register all the modules declared in the manifest.
+        dg.registerModules(manifest.wasms);
 
-            if ((moduleName == null || moduleName.isEmpty() || isLast) && mainModule == null) {
-                moduleName = "main";
-                isMain = true;
-            }
+        // Instantiate the main module, and, recursively, all of its dependencies.
+        Instance main = dg.instantiate();
+        // The kernel has been now instantiated, get a handle for it.
+        Instance kernelInstance = dg.getInstance(Kernel.IMPORT_MODULE_NAME);
 
-            checkCollision(moduleName, wasms);
-            checkHash(moduleName, wasm);
-
-            Instance instance = store.instantiate(moduleName, m);
-            if (isMain) {
-                mainModule = instance;
-            }
-        }
-
-        return new Plugin(mainModule, new Kernel(kernelInstance));
-
-    }
-
-    private void sortWasms(ManifestWasm[] wasms) {
-        Store store = new Store();
-
+        return new Plugin(main, new Kernel(kernelInstance));
     }
 
     /**
