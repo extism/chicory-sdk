@@ -3,6 +3,7 @@ package org.extism.chicory.sdk;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.runtime.HostFunction;
+import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Store;
 import com.dylibso.chicory.runtime.WasmFunctionHandle;
@@ -16,8 +17,10 @@ import com.dylibso.chicory.wasm.types.Import;
 import com.dylibso.chicory.wasm.types.ImportSection;
 import com.dylibso.chicory.wasm.types.Value;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -139,6 +142,7 @@ public class DependencyGraph {
             String moduleId = unresolved.peek();
             Module m = this.modules.get(moduleId);
             boolean satisfied = true;
+            List<HostFunction> trampolines = new ArrayList<>();
 
             ImportSection imports = m.importSection();
             // We assume that each unique `name` in an import of the form `name.symbol`
@@ -158,7 +162,7 @@ public class DependencyGraph {
                             if (mi.importType() == ExternalType.FUNCTION) {
                                 // It's ok, we just add one little indirection.
                                 // This will be resolved at the end, when everything is settled.
-                                registerTrampoline((FunctionImport) mi, m);
+                                trampolines.add(registerTrampoline((FunctionImport) mi, m));
                             } else {
                                 throw new ExtismException("cycle detected on a non-function");
                             }
@@ -176,9 +180,8 @@ public class DependencyGraph {
             // and instantiate.
             if (satisfied) {
                 unresolved.pop();
-                instantiate(moduleId);
+                instantiate(moduleId, trampolines);
             }
-
         }
 
         // We are now ready to resolve all the trampolines.
@@ -198,12 +201,16 @@ public class DependencyGraph {
         return this.getMainInstance();
     }
 
-    private Instance instantiate(String moduleId) {
+    private Instance instantiate(String moduleId, List<HostFunction> moreHostFunctions) {
         Module m = this.modules.get(moduleId);
         Objects.requireNonNull(m);
+
+        HostImports extendedHostImports =
+                mergeHostImports(store.toHostImports(), moreHostFunctions);
+
         Instance instance =
                 ChicoryModule.instanceWithOptions(m, this.options)
-                        .withHostImports(store.toHostImports())
+                        .withHostImports(extendedHostImports)
                         .withStart(false)
                         .build();
         this.store.register(moduleId, instance);
@@ -211,12 +218,33 @@ public class DependencyGraph {
         return instance;
     }
 
-    private void registerTrampoline(FunctionImport f, Module m) {
-        var trampoline = new Trampoline();
-        var functionType = m.typeSection().getType(f.typeIndex());
+    private HostImports mergeHostImports(HostImports hostImports, List<HostFunction> trampolines) {
+        HostFunction[] hostFunctions = hostImports.functions();
+        List<HostFunction> mergedList = new ArrayList<>(trampolines);
+        for (HostFunction fn : hostFunctions) {
+            for (HostFunction t : trampolines) {
+                if (t.moduleName().equals(fn.fieldName()) && t.fieldName().equals(fn.fieldName())) {
+                    // If one such case exists, the "proper" function takes precedence over the trampoline.
+                    mergedList.remove(t);
+                }
+            }
+            mergedList.add(fn);
+        }
+        return new HostImports(
+                mergedList.toArray(new HostFunction[mergedList.size()]),
+                hostImports.globals(),
+                hostImports.memories(),
+                hostImports.tables());
+    }
 
-        this.trampolines.put(new QualifiedName(f.moduleName(), f.name()), trampoline);
-        this.store.addFunction(trampoline.asHostFunction(f.moduleName(), f.name(), functionType));
+    private HostFunction registerTrampoline(FunctionImport f, Module m) {
+        // Trampolines are singletons for each <moduleName, name> pair.
+        // Trampolines are not registered into the store, as they are not "real" functions.
+        // They are instead kept separately and passed explicitly to the instance.
+        Trampoline trampoline = this.trampolines.computeIfAbsent(
+                new QualifiedName(f.moduleName(), f.name()), k -> new Trampoline());
+        var functionType = m.typeSection().getType(f.typeIndex());
+        return trampoline.asHostFunction(f.moduleName(), f.name(), functionType);
     }
 
     /**
@@ -236,7 +264,7 @@ public class DependencyGraph {
         if (instances.containsKey(moduleName)) {
             return instances.get(moduleName);
         } else {
-            return instantiate(moduleName);
+            return instantiate(moduleName, List.of());
         }
     }
 

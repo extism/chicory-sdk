@@ -2,6 +2,7 @@ package org.extism.chicory.sdk;
 
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.types.Value;
 import junit.framework.TestCase;
@@ -29,22 +30,44 @@ public class DependencyGraphTest extends TestCase {
     }
 
     public void testCircularDepsMore() throws IOException {
-        InputStream add = this.getClass().getResourceAsStream("/circular-import-more/circular-import-add.wasm");
-        InputStream sub = this.getClass().getResourceAsStream("/circular-import-more/circular-import-sub.wasm");
-        InputStream expr = this.getClass().getResourceAsStream("/circular-import-more/circular-import-expr.wasm");
-        InputStream main = this.getClass().getResourceAsStream("/circular-import-more/circular-import-main.wasm");
+        InputStream addBytes = this.getClass().getResourceAsStream("/circular-import-more/circular-import-add.wasm");
+        InputStream subBytes = this.getClass().getResourceAsStream("/circular-import-more/circular-import-sub.wasm");
+        InputStream exprBytes = this.getClass().getResourceAsStream("/circular-import-more/circular-import-expr.wasm");
+        InputStream mainBytes = this.getClass().getResourceAsStream("/circular-import-more/circular-import-main.wasm");
 
-        DependencyGraph dg = new DependencyGraph(new SystemLogger());
 
-        dg.registerModule("add", Parser.parse(add.readAllBytes()));
-        dg.registerModule("sub", Parser.parse(sub.readAllBytes()));
-        dg.registerModule("expr", Parser.parse(expr.readAllBytes()));
-        dg.registerModule("main", Parser.parse(main.readAllBytes()));
+        Module add = Parser.parse(addBytes.readAllBytes());
+        Module sub = Parser.parse(subBytes.readAllBytes());
+        Module expr = Parser.parse(exprBytes.readAllBytes());
+        Module main = Parser.parse(mainBytes.readAllBytes());
 
-        Instance mainInst = dg.instantiate();
+        {
+            DependencyGraph dg = new DependencyGraph(new SystemLogger());
+            dg.registerModule("add", add);
+            dg.registerModule("sub", sub);
+            dg.registerModule("expr", expr);
+            dg.registerModule("main", main);
 
-        Value[] result = mainInst.export("real_do_expr").apply();
-        assertEquals(60, result[0].asInt());
+            Instance mainInst = dg.instantiate();
+
+            Value[] result = mainInst.export("real_do_expr").apply();
+            assertEquals(60, result[0].asInt());
+        }
+
+        // Let's try to register them in a different order:
+        // it should never matter.
+        {
+            DependencyGraph dg = new DependencyGraph(new SystemLogger());
+            dg.registerModule("expr", expr);
+            dg.registerModule("main", main);
+            dg.registerModule("sub", sub);
+            dg.registerModule("add", add);
+
+            Instance mainInst = dg.instantiate();
+
+            Value[] result = mainInst.export("real_do_expr").apply();
+            assertEquals(60, result[0].asInt());
+        }
     }
 
 }
