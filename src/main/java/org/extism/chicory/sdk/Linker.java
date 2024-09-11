@@ -49,22 +49,5 @@ class Linker {
         return new Plugin(main, new Kernel(kernelInstance));
     }
 
-    /**
-     * @throws ExtismException on name collision.
-     */
-    private void checkCollision(String moduleName, ManifestWasm[] wasms) {
-        // FIXME: check both host imports and modules.
-        if (moduleName.equals(EXTISM_NS)) {
-            throw new ExtismException(String.format("Module name collision: %s", moduleName));
-        }
-
-        // FIXME: check collision on already processed modules
-    }
-
-    private void checkHash(String moduleName, ManifestWasm wasm) {
-        // FIXME: add hash check.
-    }
-
-
 }
 

@@ -35,6 +35,7 @@ public class DependencyGraph {
 
     private final Map<String, Set<String>> edges = new HashMap<>();
     private final Map<String, Module> modules = new HashMap<>();
+    private final Set<String> hostModules = new HashSet<>();
     private final Map<String, Instance> instances = new HashMap<>();
     private final Map<QualifiedName, Trampoline> trampolines = new HashMap<>();
 
@@ -143,7 +144,6 @@ public class DependencyGraph {
             Module m = this.modules.get(moduleId);
             boolean satisfied = true;
             List<HostFunction> trampolines = new ArrayList<>();
-
             ImportSection imports = m.importSection();
             // We assume that each unique `name` in an import of the form `name.symbol`
             // is registered as a module with that name
@@ -167,8 +167,8 @@ public class DependencyGraph {
                                 throw new ExtismException("cycle detected on a non-function");
                             }
                         }
-                    } else if (!this.instances.containsKey(requiredModule)) {
-                        // No such instance, we schedule this module for visiting.
+                    } else if (!this.instances.containsKey(requiredModule) && !this.hostModules.contains(requiredModule)) {
+                        // No such instance nor registered host function; we schedule this module for visiting.
                         satisfied = false;
                         unresolved.push(requiredModule);
                     }
@@ -253,6 +253,7 @@ public class DependencyGraph {
     public void registerFunctions(HostFunction... functions) {
         store.addFunction(functions);
         for (HostFunction f : functions) {
+            this.hostModules.add(f.moduleName());
             registerSymbol(f.moduleName(), f.fieldName());
         }
     }

@@ -9,6 +9,8 @@ import java.nio.file.Path;
 
 public class ChicoryModule {
 
+    static final boolean IS_NATIVE_IMAGE_AOT = Boolean.getBoolean("com.oracle.graalvm.isaot");
+
     public static Module fromWasm(ManifestWasm m) {
         if (m instanceof ManifestWasmBytes) {
             ManifestWasmBytes mwb = (ManifestWasmBytes) m;
@@ -32,7 +34,8 @@ public class ChicoryModule {
         if (opts == null) {
             return builder;
         }
-        if (opts.aot) {
+        // This feature is not compatibly with the native-image builder.
+        if (opts.aot && !IS_NATIVE_IMAGE_AOT) {
             builder.withMachineFactory(AotMachine::new);
         }
         if (!opts.validationFlags.isEmpty()) {

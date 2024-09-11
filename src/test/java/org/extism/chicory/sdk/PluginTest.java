@@ -2,10 +2,7 @@ package org.extism.chicory.sdk;
 
 import junit.framework.TestCase;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
 public class PluginTest extends TestCase {
 
