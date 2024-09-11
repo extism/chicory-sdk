@@ -120,6 +120,10 @@ public class DependencyGraph {
                     logger.info(String.format("Cannot find symbol: %s.%s\n", moduleName, symbolName));
                     valid = false;
                 }
+                if (!modules.containsKey(moduleName) && !hostModules.contains(moduleName)) {
+                    logger.info(String.format("Cannot find definition for the given symbol: %s.%s\n", moduleName, symbolName));
+                    valid = false;
+                }
             }
         }
         return valid;

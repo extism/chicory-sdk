@@ -2,6 +2,7 @@ package org.extism.chicory.sdk;
 
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.wasi.WasiPreview1;
 import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.types.Value;
@@ -68,6 +69,17 @@ public class DependencyGraphTest extends TestCase {
             Value[] result = mainInst.export("real_do_expr").apply();
             assertEquals(60, result[0].asInt());
         }
+    }
+
+    public void testHostFunctionDeps() throws IOException {
+        InputStream requireWasi = this.getClass().getResourceAsStream("/host-functions/import-wasi.wasm");
+        Module requireWasiM = Parser.parse(requireWasi.readAllBytes());
+        DependencyGraph dg = new DependencyGraph(new SystemLogger());
+        dg.registerFunctions(WasiPreview1.builder().build().toHostFunctions());
+        dg.registerModule("main", requireWasiM);
+        Instance mainInst = dg.instantiate();
+        assertNotNull(mainInst);
+
     }
 
 }
