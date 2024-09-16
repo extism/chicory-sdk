@@ -74,12 +74,29 @@ public class DependencyGraphTest extends TestCase {
     public void testHostFunctionDeps() throws IOException {
         InputStream requireWasi = this.getClass().getResourceAsStream("/host-functions/import-wasi.wasm");
         Module requireWasiM = Parser.parse(requireWasi.readAllBytes());
+
         DependencyGraph dg = new DependencyGraph(new SystemLogger());
         dg.registerFunctions(WasiPreview1.builder().build().toHostFunctions());
         dg.registerModule("main", requireWasiM);
+
+        // The host functions should be found, thus the module should not be further searched in the DependencyGraph.
+        // If the search did not stop, it would cause an error, because there is no actual module to instantiate.
         Instance mainInst = dg.instantiate();
         assertNotNull(mainInst);
-
     }
+
+    public void testInstantiate() throws IOException {
+        InputStream requireWasi = this.getClass().getResourceAsStream("/host-functions/import-wasi.wasm");
+        Module requireWasiM = Parser.parse(requireWasi.readAllBytes());
+
+        DependencyGraph dg = new DependencyGraph(new SystemLogger());
+        dg.registerFunctions(WasiPreview1.builder().build().toHostFunctions());
+        dg.registerModule("main", requireWasiM);
+
+        Instance mainInst = dg.instantiate();
+        Instance mainInst2 = dg.instantiate();
+        assertSame("when invoked twice, instantiate() returns the same instance", mainInst, mainInst2);
+    }
+
 
 }

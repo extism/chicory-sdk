@@ -28,12 +28,12 @@ import java.util.Stack;
 
 import static java.util.stream.Collectors.groupingBy;
 
-public class DependencyGraph {
+class DependencyGraph {
     public static final String MAIN_MODULE_NAME = "main";
 
     private final Logger logger;
 
-    private final Map<String, Set<String>> edges = new HashMap<>();
+    private final Map<String, Set<String>> registeredSymbols = new HashMap<>();
     private final Map<String, Module> modules = new HashMap<>();
     private final Set<String> hostModules = new HashSet<>();
     private final Map<String, Instance> instances = new HashMap<>();
@@ -55,13 +55,12 @@ public class DependencyGraph {
 
     /**
      * Registers all the given named modules, and tries to look for a `main`.
-     *
+     * <p>
      * Try to find the main module:
-     *  - There is always one main module
-     *  - If a Wasm value has the Name field set to "main" then use that module
-     *  - If there is only one module in the manifest then that is the main module by default
-     *  - Otherwise the last module listed is the main module
-     *
+     * - There is always one main module
+     * - If a Wasm value has the Name field set to "main" then use that module
+     * - If there is only one module in the manifest then that is the main module by default
+     * - Otherwise the last module listed is the main module
      */
     public void registerModules(ManifestWasm... wasms) {
         for (int i = 0; i < wasms.length; i++) {
@@ -82,13 +81,16 @@ public class DependencyGraph {
     }
 
     private void checkCollision(String moduleName, String symbol) {
-        if (symbol == null && this.edges.containsKey(moduleName)) {
+        if (symbol == null && this.registeredSymbols.containsKey(moduleName)) {
             throw new ExtismException("Collision detected: a module with the given name already exists: " + moduleName);
-        } else if (this.edges.containsKey(moduleName) && this.edges.get(moduleName).contains(symbol)) {
+        } else if (this.registeredSymbols.containsKey(moduleName) && this.registeredSymbols.get(moduleName).contains(symbol)) {
             throw new ExtismException("Collision detected: a symbol with the given name already exists: " + moduleName + "." + symbol);
         }
     }
 
+    /**
+     * Register a Module with the given name.
+     */
     public void registerModule(String name, Module m) {
         checkCollision(name, null);
 
@@ -103,7 +105,7 @@ public class DependencyGraph {
 
     public void registerSymbol(String name, String symbol) {
         checkCollision(name, symbol);
-        edges.computeIfAbsent(name, k -> new HashSet<>()).add(symbol);
+        registeredSymbols.computeIfAbsent(name, k -> new HashSet<>()).add(symbol);
     }
 
     public boolean validate() {
@@ -116,12 +118,12 @@ public class DependencyGraph {
                 Import imp = imports.getImport(i);
                 String moduleName = imp.moduleName();
                 String symbolName = imp.name();
-                if (!edges.containsKey(moduleName) || !edges.get(moduleName).contains(symbolName)) {
-                    logger.info(String.format("Cannot find symbol: %s.%s\n", moduleName, symbolName));
+                if (!registeredSymbols.containsKey(moduleName) || !registeredSymbols.get(moduleName).contains(symbolName)) {
+                    logger.warnf("Cannot find symbol: %s.%s\n", moduleName, symbolName);
                     valid = false;
                 }
                 if (!modules.containsKey(moduleName) && !hostModules.contains(moduleName)) {
-                    logger.info(String.format("Cannot find definition for the given symbol: %s.%s\n", moduleName, symbolName));
+                    logger.warnf("Cannot find definition for the given symbol: %s.%s\n", moduleName, symbolName);
                     valid = false;
                 }
             }
@@ -132,10 +134,17 @@ public class DependencyGraph {
     /**
      * Instantiate is a breadth-first visit of the dependency graph, starting
      * from the `main` module, and recursively instantiating the required dependencies.
+     * <p>
+     * The method is idempotent, invoking it twice causes it to return the same instance.
      *
      * @return an instance of the main module.
      */
     public Instance instantiate() {
+        Instance mainInstance = this.getMainInstance();
+        if (mainInstance != null) {
+            return mainInstance;
+        }
+
         if (!validate()) {
             throw new ExtismException("Unresolved symbols");
         }
@@ -252,7 +261,9 @@ public class DependencyGraph {
     }
 
     /**
-     * Register the given host functions in the store.
+     * Register the given host functions in the store. Each host function
+     * has a "module name" and a symbol name, thus we register each module name
+     * in the "hostModules" set.
      */
     public void registerFunctions(HostFunction... functions) {
         store.addFunction(functions);
@@ -263,7 +274,8 @@ public class DependencyGraph {
     }
 
     /**
-     * @return a named instance with the given name.
+     * @return a named instance with the given name. The method is idempotent,
+     * invoking it twice causes it to return the same instance.
      */
     public Instance getInstance(String moduleName) {
         if (instances.containsKey(moduleName)) {
@@ -305,6 +317,9 @@ public class DependencyGraph {
         }
     }
 
+    /**
+     * A pair moduleName, symbol name.
+     */
     static final class QualifiedName {
         final String moduleName;
         final String fieldName;

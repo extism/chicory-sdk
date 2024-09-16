@@ -7,11 +7,11 @@ import com.dylibso.chicory.wasm.Parser;
 
 import java.nio.file.Path;
 
-public class ChicoryModule {
+class ChicoryModule {
 
     static final boolean IS_NATIVE_IMAGE_AOT = Boolean.getBoolean("com.oracle.graalvm.isaot");
 
-    public static Module fromWasm(ManifestWasm m) {
+    static Module fromWasm(ManifestWasm m) {
         if (m instanceof ManifestWasmBytes) {
             ManifestWasmBytes mwb = (ManifestWasmBytes) m;
             return Parser.parse(mwb.bytes);
@@ -29,7 +29,7 @@ public class ChicoryModule {
         }
     }
 
-    public static Instance.Builder instanceWithOptions(Module m, Manifest.Options opts) {
+    static Instance.Builder instanceWithOptions(Module m, Manifest.Options opts) {
         Instance.Builder builder = Instance.builder(m);
         if (opts == null) {
             return builder;
