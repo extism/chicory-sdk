@@ -18,23 +18,25 @@
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
     <maven.compiler.release>11</maven.compiler.release>
+
+    <chicory.version>999-SNAPSHOT</chicory.version>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>runtime</artifactId>
-      <version>0.0.12</version>
+      <version>${chicory.version}</version>
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>wasi</artifactId>
-      <version>0.0.12</version>
+      <version>${chicory.version}</version>
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>aot</artifactId>
-      <version>0.0.12</version>
+      <version>${chicory.version}</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
