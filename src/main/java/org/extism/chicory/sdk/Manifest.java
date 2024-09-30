@@ -2,6 +2,7 @@ package org.extism.chicory.sdk;
 
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 
 public class Manifest {
 
@@ -12,9 +13,15 @@ public class Manifest {
     public static class Options {
         boolean aot;
         EnumSet<Validation> validationFlags = EnumSet.noneOf(Validation.class);
+        Map<String, String> config;
 
         public Options withAoT() {
             this.aot = true;
+            return this;
+        }
+
+        public Options withConfig(Map<String, String> config) {
+            this.config = config;
             return this;
         }
 
