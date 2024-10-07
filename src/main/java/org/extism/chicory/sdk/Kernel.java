@@ -1,8 +1,5 @@
 package org.extism.chicory.sdk;
 
-import static com.dylibso.chicory.wasm.types.Value.*;
-
-import com.dylibso.chicory.aot.AotMachine;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.ExportFunction;
@@ -11,16 +8,18 @@ import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Module;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
-import com.dylibso.chicory.runtime.Memory;
+
 import java.util.HashMap;
 import java.util.List;
 
+import static com.dylibso.chicory.wasm.types.Value.i64;
+
 public class Kernel {
-    private static final String IMPORT_MODULE_NAME = "extism:host/env";
-    private final Memory memory;
-    private final ExportFunction alloc;
+    static final String IMPORT_MODULE_NAME = "extism:host/env";
+    final com.dylibso.chicory.runtime.Memory instanceMemory;
+    final ExportFunction alloc;
     private final ExportFunction free;
-    private final ExportFunction length;
+    final ExportFunction length;
     private final ExportFunction lengthUnsafe;
     private final ExportFunction loadU8;
     private final ExportFunction loadU64;
@@ -28,11 +27,11 @@ public class Kernel {
     private final ExportFunction inputLoadU64;
     private final ExportFunction storeU8;
     private final ExportFunction storeU64;
-    private final ExportFunction inputSet;
+    final ExportFunction inputSet;
     private final ExportFunction inputLen;
     private final ExportFunction inputOffset;
-    private final ExportFunction outputLen;
-    private final ExportFunction outputOffset;
+    final ExportFunction outputLen;
+    final ExportFunction outputOffset;
     private final ExportFunction outputSet;
     private final ExportFunction reset;
     private final ExportFunction errorSet;
@@ -52,7 +51,7 @@ public class Kernel {
         //moduleBuilder = moduleBuilder.withMachineFactory(AotMachine::new);
 
         Instance kernel = moduleBuilder.build().instantiate();
-        memory = kernel.memory();
+        instanceMemory = kernel.memory();
         alloc = kernel.export("alloc");
         free = kernel.export("free");
         length = kernel.export("length");
@@ -73,21 +72,22 @@ public class Kernel {
         errorSet = kernel.export("error_set");
         errorGet = kernel.export("error_get");
         memoryBytes = kernel.export("memory_bytes");
+
     }
 
-    public void setInput(byte[] input) {
+    void setInput(byte[] input) {
         var ptr = alloc.apply(i64(input.length))[0];
-        memory.write(ptr.asInt(), input);
+        instanceMemory.write(ptr.asInt(), input);
         inputSet.apply(ptr, i64(input.length));
     }
 
-    public byte[] getOutput() {
+    byte[] getOutput() {
         var ptr = outputOffset.apply()[0];
         var len = outputLen.apply()[0];
-        return memory.readBytes(ptr.asInt(), len.asInt());
+        return instanceMemory.readBytes(ptr.asInt(), len.asInt());
     }
 
-    public HostFunction[] toHostFunctions() {
+    HostFunction[] toHostFunctions() {
         var hostFunctions = new HostFunction[23];
         int count = 0;
 
@@ -261,7 +261,7 @@ public class Kernel {
                             //                    var key = memory.getString(args[0].asInt(),
                             // keyLen.asInt());
                             //                    var value = vars.get(key);
-                            return new Value[] {i64(0)};
+                            return new Value[]{i64(0)};
                         },
                         IMPORT_MODULE_NAME,
                         "var_get",
@@ -291,7 +291,7 @@ public class Kernel {
                             //                    var key = memory.getString(args[0].asInt(),
                             // keyLen.asInt());
                             //                    var value = vars.get(key);
-                            return new Value[] {i64(0)};
+                            return new Value[]{i64(0)};
                         },
                         IMPORT_MODULE_NAME,
                         "config_get",
@@ -300,4 +300,5 @@ public class Kernel {
 
         return hostFunctions;
     }
+
 }
