@@ -8,6 +8,7 @@ import com.dylibso.chicory.wasi.WasiPreview1;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -33,7 +34,8 @@ class Linker {
         dg.setOptions(manifest.options);
 
         // Register the HostEnv exports.
-        var config = manifest.options != null ? manifest.options.config : null;
+        Map<String, String> config =
+                manifest.options != null ? manifest.options.config : Map.of();
         var hostEnv = new HostEnv(new Kernel(), config, logger);
         dg.registerFunctions(hostEnv.toHostFunctions());
 
@@ -55,8 +57,7 @@ class Linker {
 
         // Instantiate the main module, and, recursively, all of its dependencies.
         Instance main = dg.instantiate();
-
-
+    
         Plugin p = new Plugin(main, hostEnv);
         CurrentPlugin curr = new CurrentPlugin(p);
 
