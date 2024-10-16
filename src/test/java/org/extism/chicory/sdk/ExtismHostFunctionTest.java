@@ -23,7 +23,8 @@ public class ExtismHostFunctionTest extends TestCase {
         var plugin = Plugin.ofManifest(manifest).withLogger(new SystemLogger()).build();
 
 
-        HostFunction hostFunction = f.toHostFunction(new CurrentPlugin(plugin));
+        HostFunction hostFunction = f.asHostFunction();
+        f.bind(new CurrentPlugin(plugin));
         Instance instance = null;
         Value[] args = null;
         hostFunction.handle().apply(instance, args);

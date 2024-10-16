@@ -32,6 +32,7 @@ public final class ExtismHostFunction {
     private final Handle handle;
     private final List<ValueType> paramTypes;
     private final List<ValueType> returnTypes;
+    private CurrentPlugin currentPlugin;
 
     ExtismHostFunction(
             String module,
@@ -46,9 +47,18 @@ public final class ExtismHostFunction {
         this.returnTypes = returnTypes;
     }
 
-    final HostFunction toHostFunction(CurrentPlugin currentPlugin) {
+    public void bind(CurrentPlugin p) {
+        if (currentPlugin != null) {
+            throw new IllegalArgumentException(
+                    String.format("Function '%s.%s' is already bound to %s.",
+                            module, name, currentPlugin));
+        }
+        this.currentPlugin = p;
+    }
+
+    final HostFunction asHostFunction() {
         return new HostFunction(
-                (Instance inst, Value... args) -> handle.apply(currentPlugin, args),
+                (Instance inst, Value... args) -> handle.apply(this.currentPlugin, args),
                 module, name, paramTypes, returnTypes);
     }
 
