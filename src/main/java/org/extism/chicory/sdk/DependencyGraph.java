@@ -3,10 +3,13 @@ package org.extism.chicory.sdk;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.runtime.HostFunction;
-import com.dylibso.chicory.runtime.HostImports;
+import com.dylibso.chicory.runtime.ImportFunction;
+import com.dylibso.chicory.runtime.ImportValue;
+import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.runtime.Store;
 import com.dylibso.chicory.runtime.WasmFunctionHandle;
-import com.dylibso.chicory.runtime.Module;
+import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.types.Export;
 import com.dylibso.chicory.wasm.types.ExportSection;
 import com.dylibso.chicory.wasm.types.ExternalType;
@@ -93,7 +96,7 @@ class DependencyGraph {
     public void registerModule(String name, Module m) {
         checkCollision(name, null);
 
-        ExportSection exportSection = m.wasmModule().exportSection();
+        ExportSection exportSection = m.exportSection();
         for (int i = 0; i < exportSection.exportCount(); i++) {
             Export export = exportSection.getExport(i);
             String exportName = export.name();
@@ -112,10 +115,10 @@ class DependencyGraph {
         for (var kv : modules.entrySet()) {
             Module m = kv.getValue();
 
-            ImportSection imports = m.wasmModule().importSection();
+            ImportSection imports = m.importSection();
             for (int i = 0; i < imports.importCount(); i++) {
                 Import imp = imports.getImport(i);
-                String moduleName = imp.moduleName();
+                String moduleName = imp.module();
                 String symbolName = imp.name();
                 if (!registeredSymbols.containsKey(moduleName) || !registeredSymbols.get(moduleName).contains(symbolName)) {
                     logger.warnf("Cannot find symbol: %s.%s\n", moduleName, symbolName);
@@ -156,13 +159,13 @@ class DependencyGraph {
             Module m = this.modules.get(moduleId);
             boolean satisfied = true;
             List<HostFunction> trampolines = new ArrayList<>();
-            ImportSection imports = m.wasmModule().importSection();
+            ImportSection imports = m.importSection();
             // We assume that each unique `name` in an import of the form `name.symbol`
             // is registered as a module with that name
             //
             // FIXME: this is actually a strong assumption, because we could
             // define "overrides" by overwriting individual `name.symbol` in our table.
-            var requiredModules = imports.stream().collect(groupingBy(Import::moduleName));
+            var requiredModules = imports.stream().collect(groupingBy(Import::module));
 
             if (!requiredModules.isEmpty()) {
                 // We need to check whether the given import is available
@@ -217,37 +220,37 @@ class DependencyGraph {
         Module m = this.modules.get(moduleId);
         Objects.requireNonNull(m);
 
-        HostImports extendedHostImports =
-                mergeHostImports(store.toHostImports(), moreHostFunctions);
+        ImportValues importValues =
+                mergeImportValues(store.toImportValues(), moreHostFunctions);
 
         Instance instance =
                 ChicoryModule.instanceWithOptions(
-                        Module.builder(m.wasmModule()), this.options)
-                        .withHostImports(extendedHostImports)
+                        Instance.builder(m), this.options)
+                        .withImportValues(importValues)
                         .withStart(false)
-                        .build().instantiate();
+                        .build();
         this.store.register(moduleId, instance);
         this.instances.put(moduleId, instance);
         return instance;
     }
 
-    private HostImports mergeHostImports(HostImports hostImports, List<HostFunction> trampolines) {
-        HostFunction[] hostFunctions = hostImports.functions();
-        List<HostFunction> mergedList = new ArrayList<>(trampolines);
-        for (HostFunction fn : hostFunctions) {
+    private ImportValues mergeImportValues(ImportValues hostImports, List<HostFunction> trampolines) {
+        ImportFunction[] hostFunctions = hostImports.functions();
+        List<ImportFunction> mergedList = new ArrayList<>(trampolines);
+        for (ImportFunction fn : hostFunctions) {
             for (HostFunction t : trampolines) {
-                if (t.moduleName().equals(fn.fieldName()) && t.fieldName().equals(fn.fieldName())) {
+                if (t.module().equals(fn.name()) && t.name().equals(fn.name())) {
                     // If one such case exists, the "proper" function takes precedence over the trampoline.
                     mergedList.remove(t);
                 }
             }
             mergedList.add(fn);
         }
-        return new HostImports(
-                mergedList.toArray(new HostFunction[mergedList.size()]),
-                hostImports.globals(),
-                hostImports.memories(),
-                hostImports.tables());
+        return ImportValues.builder().addFunction(
+                        mergedList.toArray(new ImportFunction[mergedList.size()]))
+                .addGlobal(hostImports.globals())
+                .addMemory(hostImports.memories())
+                .addTable(hostImports.tables()).build();
     }
 
     private HostFunction registerTrampoline(FunctionImport f, Module m) {
@@ -255,9 +258,9 @@ class DependencyGraph {
         // Trampolines are not registered into the store, as they are not "real" functions.
         // They are instead kept separately and passed explicitly to the instance.
         Trampoline trampoline = this.trampolines.computeIfAbsent(
-                new QualifiedName(f.moduleName(), f.name()), k -> new Trampoline());
-        var functionType = m.wasmModule().typeSection().getType(f.typeIndex());
-        return trampoline.asHostFunction(f.moduleName(), f.name(), functionType);
+                new QualifiedName(f.module(), f.name()), k -> new Trampoline());
+        var functionType = m.typeSection().getType(f.typeIndex());
+        return trampoline.asHostFunction(f.module(), f.name(), functionType);
     }
 
     /**
@@ -268,8 +271,8 @@ class DependencyGraph {
     public void registerFunctions(HostFunction... functions) {
         store.addFunction(functions);
         for (HostFunction f : functions) {
-            this.hostModules.add(f.moduleName());
-            registerSymbol(f.moduleName(), f.fieldName());
+            this.hostModules.add(f.module());
+            registerSymbol(f.module(), f.name());
         }
     }
 
@@ -294,7 +297,7 @@ class DependencyGraph {
 
     static final class Trampoline implements WasmFunctionHandle {
         WasmFunctionHandle f =
-                (Instance instance, Value... args) -> {
+                (Instance instance, long... args) -> {
                     throw new ExtismException("Unresolved trampoline");
                 };
 
@@ -303,17 +306,17 @@ class DependencyGraph {
         }
 
         public void resolveFunction(ExportFunction ef) {
-            this.f = (Instance instance, Value... args) -> ef.apply(args);
+            this.f = (Instance instance, long... args) -> ef.apply(args);
         }
 
         @Override
-        public Value[] apply(Instance instance, Value... args) {
+        public long[] apply(Instance instance, long... args) {
             return f.apply(instance, args);
         }
 
         public HostFunction asHostFunction(String moduleName, String name, FunctionType functionType) {
-            return new HostFunction(this, moduleName, name,
-                    functionType.params(), functionType.returns());
+            return new HostFunction(moduleName, name,
+                    functionType.params(), functionType.returns(), this);
         }
     }
 

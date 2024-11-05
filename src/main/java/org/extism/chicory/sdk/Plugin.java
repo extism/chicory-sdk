@@ -66,7 +66,7 @@ public class Plugin {
     public byte[] call(String funcName, byte[] input) {
         var func = mainInstance.export(funcName);
         hostEnv.setInput(input);
-        var result = func.apply()[0].asInt();
+        var result = func.apply()[0];
         if (result == 0) {
             return hostEnv.getOutput();
         } else {

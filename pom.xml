@@ -63,7 +63,7 @@
 
     <java.version>11</java.version>
 
-    <chicory.version>0.0.12</chicory.version>
+    <chicory.version>1.0.0-M1</chicory.version>
     <junit.version>3.8.1</junit.version>
 
     <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
@@ -86,7 +86,7 @@
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>aot</artifactId>
+      <artifactId>aot-experimental</artifactId>
       <version>${chicory.version}</version>
     </dependency>
     <dependency>

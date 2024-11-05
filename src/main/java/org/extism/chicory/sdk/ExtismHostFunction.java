@@ -58,12 +58,12 @@ public final class ExtismHostFunction {
 
     final HostFunction asHostFunction() {
         return new HostFunction(
-                (Instance inst, Value... args) -> handle.apply(this.currentPlugin, args),
-                module, name, paramTypes, returnTypes);
+                module, name, paramTypes, returnTypes,
+                (Instance inst, long... args) -> handle.apply(this.currentPlugin, args));
     }
 
     @FunctionalInterface
     public interface Handle {
-        Value[] apply(CurrentPlugin currentPlugin, Value... args);
+        long[] apply(CurrentPlugin currentPlugin, long... args);
     }
 }
