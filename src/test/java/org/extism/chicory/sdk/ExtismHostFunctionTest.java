@@ -6,6 +6,8 @@ import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.types.Value;
 import junit.framework.TestCase;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class ExtismHostFunctionTest extends TestCase {

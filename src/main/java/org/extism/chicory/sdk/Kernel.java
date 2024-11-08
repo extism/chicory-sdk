@@ -4,12 +4,9 @@ import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.Parser;
-import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 
 import java.util.List;
-
-import static com.dylibso.chicory.wasm.types.Value.i64;
 
 public class Kernel {
     static final String IMPORT_MODULE_NAME = "extism:host/env";
@@ -77,6 +74,11 @@ public class Kernel {
         return instanceMemory.readBytes((int) ptr, (int) len);
     }
 
+    public String getError() {
+        long ptr = errorGet.apply()[0];
+        long len = length.apply(ptr)[0];
+        return instanceMemory.readString((int) ptr, (int) len);
+    }
 
     HostFunction[] toHostFunctions() {
         var hostFunctions = new HostFunction[20];
@@ -241,7 +243,7 @@ public class Kernel {
                         "error_set",
                         List.of(ValueType.I64),
                         List.of(),
-                        (Instance instance, long... args) -> reset.apply(args)
+                        (Instance instance, long... args) -> errorSet.apply(args)
                 );
 
         hostFunctions[count++] =

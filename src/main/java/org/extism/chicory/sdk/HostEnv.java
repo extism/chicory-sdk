@@ -64,9 +64,14 @@ public class HostEnv {
         return kernel.getOutput();
     }
 
+    public String getError() {
+        return kernel.getError();
+    }
+
     public Memory memory() {
         return this.memory;
     }
+
 
     public class Memory {
 

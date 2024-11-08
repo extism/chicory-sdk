@@ -70,7 +70,8 @@ public class Plugin {
         if (result == 0) {
             return hostEnv.getOutput();
         } else {
-            throw new ExtismException("Failed");
+            String error = hostEnv.getError();
+            throw new ExtismFunctionException(funcName, error);
         }
     }
 }
