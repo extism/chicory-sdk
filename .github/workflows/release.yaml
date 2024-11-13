@@ -49,7 +49,6 @@ jobs:
           git config user.email "oss@extism.org"
 
       - name: Set the version
-        if: ${{ ! endsWith(github.event.inputs.release-version, '-SNAPSHOT') }}
         run: |
           mvn --batch-mode --no-transfer-progress versions:set -DgenerateBackupPoms=false -DnewVersion=${{ github.event.inputs.release-version }}
         env:
