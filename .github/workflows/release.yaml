@@ -52,23 +52,23 @@ jobs:
         if: ${{ ! endsWith(github.event.inputs.release-version, '-SNAPSHOT') }}
         run: |
           mvn --batch-mode --no-transfer-progress versions:set -DgenerateBackupPoms=false -DnewVersion=${{ github.event.inputs.release-version }}
-          git add .
-          git commit -m "Release version update ${{ github.event.inputs.release-version }}"
-          git tag ${{ github.event.inputs.release-version }}
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
       - name: Release to Maven Central
         run: |
-          mvn --batch-mode --no-transfer-progress clean verify deploy -X
+          mvn --batch-mode --no-transfer-progress -Prelease clean verify deploy -X
         env:
           MAVEN_USERNAME: ${{ secrets.JRELEASER_NEXUS2_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.JRELEASER_NEXUS2_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.JRELEASER_GPG_PASSPHRASE }}
 
-      - name: Back to Snapshot and Push
+      - name: Commit tag, back to Snapshot and Push
         if: ${{ ! endsWith(github.event.inputs.release-version, '-SNAPSHOT') }}
         run: |
+          git add .
+          git commit -m "Release version update ${{ github.event.inputs.release-version }}"
+          git tag ${{ github.event.inputs.release-version }}
           mvn --batch-mode --no-transfer-progress versions:set -DgenerateBackupPoms=false -DnewVersion=999-SNAPSHOT
           git add .
           git commit -m "Snapshot version update"
