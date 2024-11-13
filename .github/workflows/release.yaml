@@ -30,7 +30,7 @@ jobs:
           distribution: 'temurin'
           server-id: ossrh
           server-username: MAVEN_USERNAME
-          server-password: MAVEN_CENTRAL_TOKEN
+          server-password: MAVEN_PASSWORD
           gpg-private-key: ${{ secrets.JRELEASER_GPG_SECRET_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
@@ -41,7 +41,7 @@ jobs:
           gpg --list-secret-keys --keyid-format LONG
 
       - name: Compile
-        run: mvn --batch-mode verify
+        run: mvn --batch-mode --no-transfer-progress verify
 
       - name: Setup Git
         run: |
@@ -50,28 +50,28 @@ jobs:
 
       - name: Set the version
         run: |
-          mvn versions:set -DgenerateBackupPoms=false -DnewVersion=${{ github.event.inputs.release-version }}
+          mvn --batch-mode --no-transfer-progress versions:set -DgenerateBackupPoms=false -DnewVersion=${{ github.event.inputs.release-version }}
           git add .
           git commit -m "Release version update ${{ github.event.inputs.release-version }}"
-          git push
           git tag ${{ github.event.inputs.release-version }}
-          git push origin ${{ github.event.inputs.release-version }}
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
       - name: Release to Maven Central
         run: |
-          mvn --batch-mode clean verify deploy -X
+          mvn --batch-mode --no-transfer-progress clean verify deploy -X
         env:
-          MAVEN_USERNAME: ${{ secrets.JRELEASER_NEXUS2_PASSWORD }}
-          MAVEN_CENTRAL_TOKEN: ${{ secrets.JRELEASER_NEXUS2_USERNAME }}
+          MAVEN_USERNAME: ${{ secrets.JRELEASER_NEXUS2_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.JRELEASER_NEXUS2_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.JRELEASER_GPG_PASSPHRASE }}
 
-      - name: Back to Snapshot
+      - name: Back to Snapshot and Push
+        if: ${{ ! endsWith(github.event.inputs.release-version, '-SNAPSHOT') }}
         run: |
-          mvn versions:set -DgenerateBackupPoms=false -DnewVersion=999-SNAPSHOT
+          mvn --batch-mode --no-transfer-progress versions:set -DgenerateBackupPoms=false -DnewVersion=999-SNAPSHOT
           git add .
           git commit -m "Snapshot version update"
           git push
+          git push origin ${{ github.event.inputs.release-version }}
         env:
           GITHUB_TOKEN:  ${{ github.token }}
