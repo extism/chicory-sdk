@@ -1,7 +1,9 @@
 package org.extism.chicory.sdk;
 
-import com.dylibso.chicory.aot.AotMachine;
-import com.dylibso.chicory.runtime.Module;
+import com.dylibso.chicory.experimental.aot.AotMachine;
+import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.wasm.Module;
+import com.dylibso.chicory.wasm.Parser;
 
 import java.nio.file.Path;
 
@@ -12,22 +14,22 @@ class ChicoryModule {
     static Module fromWasm(ManifestWasm m) {
         if (m instanceof ManifestWasmBytes) {
             ManifestWasmBytes mwb = (ManifestWasmBytes) m;
-            return Module.builder(mwb.bytes).build();
+            return Parser.parse(mwb.bytes);
         } else if (m instanceof ManifestWasmPath) {
             ManifestWasmPath mwp = (ManifestWasmPath) m;
-            return Module.builder(Path.of(mwp.path)).build();
+            return Parser.parse(Path.of(mwp.path));
         } else if (m instanceof ManifestWasmFile) {
             ManifestWasmFile mwf = (ManifestWasmFile) m;
-            return Module.builder(mwf.filePath).build();
+            return Parser.parse(mwf.filePath);
         } else if (m instanceof ManifestWasmUrl) {
             ManifestWasmUrl mwu = (ManifestWasmUrl) m;
-            return Module.builder(mwu.getUrlAsStream()).build();
+            return Parser.parse(mwu.getUrlAsStream());
         } else {
             throw new IllegalArgumentException("Unknown ManifestWasm type " + m.getClass());
         }
     }
 
-    static Module.Builder instanceWithOptions(Module.Builder m, Manifest.Options opts) {
+    static Instance.Builder instanceWithOptions(Instance.Builder m, Manifest.Options opts) {
         if (opts == null) {
             return m;
         }

@@ -3,12 +3,13 @@ package org.extism.chicory.sdk;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasi.WasiPreview1;
-import com.dylibso.chicory.runtime.Module;
-import com.dylibso.chicory.wasm.types.Value;
+import com.dylibso.chicory.wasm.Module;
 import junit.framework.TestCase;
 
 import java.io.IOException;
 import java.io.InputStream;
+
+import static com.dylibso.chicory.wasm.Parser.parse;
 
 public class DependencyGraphTest extends TestCase {
 
@@ -25,8 +26,8 @@ public class DependencyGraphTest extends TestCase {
 
         Instance main = dg.instantiate();
 
-        Value[] result = main.export("real_do_expr").apply();
-        assertEquals(60, result[0].asInt());
+        long[] result = main.export("real_do_expr").apply();
+        assertEquals(60, result[0]);
     }
 
 
@@ -51,8 +52,8 @@ public class DependencyGraphTest extends TestCase {
 
             Instance mainInst = dg.instantiate();
 
-            Value[] result = mainInst.export("real_do_expr").apply();
-            assertEquals(60, result[0].asInt());
+            long[] result = mainInst.export("real_do_expr").apply();
+            assertEquals(60, (int) result[0]);
         }
 
         // Let's try to register them in a different order:
@@ -66,8 +67,8 @@ public class DependencyGraphTest extends TestCase {
 
             Instance mainInst = dg.instantiate();
 
-            Value[] result = mainInst.export("real_do_expr").apply();
-            assertEquals(60, result[0].asInt());
+            long[] result = mainInst.export("real_do_expr").apply();
+            assertEquals(60, (int) result[0]);
         }
     }
 
@@ -96,10 +97,6 @@ public class DependencyGraphTest extends TestCase {
         Instance mainInst = dg.instantiate();
         Instance mainInst2 = dg.instantiate();
         assertSame("when invoked twice, instantiate() returns the same instance", mainInst, mainInst2);
-    }
-
-    private Module parse(InputStream is1) throws IOException {
-        return Module.builder(is1.readAllBytes()).build();
     }
 
     private WasiPreview1 wasiPreview1() {

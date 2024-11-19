@@ -6,12 +6,14 @@ import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.types.Value;
 import junit.framework.TestCase;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class ExtismHostFunctionTest extends TestCase {
     public void testFunction() {
         var f = ExtismHostFunction.of("myfunc", List.of(), List.of(),
-                (CurrentPlugin p, Value... args) -> {
+                (CurrentPlugin p, long... args) -> {
                     p.log().log(LogLevel.INFO, "hello world");
                     return null;
         });
@@ -26,7 +28,7 @@ public class ExtismHostFunctionTest extends TestCase {
         HostFunction hostFunction = f.asHostFunction();
         f.bind(new CurrentPlugin(plugin));
         Instance instance = null;
-        Value[] args = null;
+        long[] args = null;
         hostFunction.handle().apply(instance, args);
     }
 }

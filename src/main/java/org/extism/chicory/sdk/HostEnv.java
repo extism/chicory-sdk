@@ -64,14 +64,19 @@ public class HostEnv {
         return kernel.getOutput();
     }
 
+    public String getError() {
+        return kernel.getError();
+    }
+
     public Memory memory() {
         return this.memory;
     }
 
+
     public class Memory {
 
         public long length(long offset) {
-            return kernel.length.apply(i64(offset))[0].asLong();
+            return kernel.length.apply(offset)[0];
         }
 
         public com.dylibso.chicory.runtime.Memory memory() {
@@ -79,7 +84,7 @@ public class HostEnv {
         }
 
         public long alloc(long size) {
-            return kernel.alloc.apply(i64(size))[0].asLong();
+            return kernel.alloc.apply(size)[0];
         }
 
         byte[] readBytes(long offset) {
@@ -113,40 +118,40 @@ public class HostEnv {
             logger.log(level.toChicoryLogLevel(), String.format(format, args), null);
         }
 
-        private Value[] logTrace(Instance instance, Value... args) {
-            return log(LogLevel.TRACE, args[0].asLong());
+        private long[] logTrace(Instance instance, long... args) {
+            return log(LogLevel.TRACE, args[0]);
         }
 
-        private Value[] logDebug(Instance instance, Value... args) {
-            return log(LogLevel.DEBUG, args[0].asLong());
+        private long[] logDebug(Instance instance, long... args) {
+            return log(LogLevel.DEBUG, args[0]);
         }
 
-        private Value[] logInfo(Instance instance, Value... args) {
-            return log(LogLevel.INFO, args[0].asLong());
+        private long[] logInfo(Instance instance, long... args) {
+            return log(LogLevel.INFO, args[0]);
         }
 
-        private Value[] logWarn(Instance instance, Value... args) {
-            return log(LogLevel.WARN, args[0].asLong());
+        private long[] logWarn(Instance instance, long... args) {
+            return log(LogLevel.WARN, args[0]);
         }
 
-        private Value[] logError(Instance instance, Value... args) {
-            return log(LogLevel.ERROR, args[0].asLong());
+        private long[] logError(Instance instance, long... args) {
+            return log(LogLevel.ERROR, args[0]);
         }
 
 
-        private Value[] log(LogLevel level, long offset) {
+        private long[] log(LogLevel level, long offset) {
             String msg = memory().readString(offset);
             log(level, msg);
-            return new Value[0];
+            return new long[0];
         }
 
         HostFunction[] toHostFunctions() {
             return new HostFunction[]{
-                    new HostFunction(this::logTrace, Kernel.IMPORT_MODULE_NAME, "log_trace", List.of(ValueType.I64), List.of()),
-                    new HostFunction(this::logDebug, Kernel.IMPORT_MODULE_NAME, "log_debug", List.of(ValueType.I64), List.of()),
-                    new HostFunction(this::logInfo, Kernel.IMPORT_MODULE_NAME, "log_info", List.of(ValueType.I64), List.of()),
-                    new HostFunction(this::logWarn, Kernel.IMPORT_MODULE_NAME, "log_warn", List.of(ValueType.I64), List.of()),
-                    new HostFunction(this::logError, Kernel.IMPORT_MODULE_NAME, "log_error", List.of(ValueType.I64), List.of())};
+                    new HostFunction(Kernel.IMPORT_MODULE_NAME, "log_trace", List.of(ValueType.I64), List.of(), this::logTrace),
+                    new HostFunction(Kernel.IMPORT_MODULE_NAME, "log_debug", List.of(ValueType.I64), List.of(), this::logDebug),
+                    new HostFunction(Kernel.IMPORT_MODULE_NAME, "log_info", List.of(ValueType.I64), List.of(), this::logInfo),
+                    new HostFunction(Kernel.IMPORT_MODULE_NAME, "log_warn", List.of(ValueType.I64), List.of(), this::logWarn),
+                    new HostFunction(Kernel.IMPORT_MODULE_NAME, "log_error", List.of(ValueType.I64), List.of(), this::logError)};
         }
     }
 
@@ -163,28 +168,28 @@ public class HostEnv {
             this.vars.put(key, value);
         }
 
-        private Value[] varGet(Instance instance, Value... args) {
+        private long[] varGet(Instance instance, long... args) {
             // FIXME: should check MaxVarBytes to see if vars are disabled.
 
-            long ptr = args[0].asLong();
+            long ptr = args[0];
             String key = memory().readString(ptr);
             byte[] value = get(key);
-            Value result;
+            long result;
             if (value == null) {
                 // Value not found
-                result = i64(0);
+                result = 0;
             } else {
                 long rPtr = memory().writeBytes(value);
-                result = i64(rPtr);
+                result = rPtr;
             }
-            return new Value[]{result};
+            return new long[]{result};
         }
 
-        private Value[] varSet(Instance instance, Value... args) {
+        private long[] varSet(Instance instance, long... args) {
             // FIXME: should check MaxVarBytes before committing.
 
-            long keyPtr = args[0].asLong();
-            long valuePtr = args[1].asLong();
+            long keyPtr = args[0];
+            long valuePtr = args[1];
             String key = memory().readString(keyPtr);
 
             // Remove if the value offset is 0
@@ -194,14 +199,14 @@ public class HostEnv {
                 byte[] value = memory().readBytes(valuePtr);
                 set(key, value);
             }
-            return new Value[0];
+            return new long[0];
         }
 
 
         HostFunction[] toHostFunctions() {
             return new HostFunction[]{
-                    new HostFunction(this::varGet, Kernel.IMPORT_MODULE_NAME, "var_get", List.of(ValueType.I64), List.of(ValueType.I64)),
-                    new HostFunction(this::varSet, Kernel.IMPORT_MODULE_NAME, "var_set", List.of(ValueType.I64, ValueType.I64), List.of()),
+                    new HostFunction(Kernel.IMPORT_MODULE_NAME, "var_get", List.of(ValueType.I64), List.of(ValueType.I64), this::varGet),
+                    new HostFunction(Kernel.IMPORT_MODULE_NAME, "var_set", List.of(ValueType.I64, ValueType.I64), List.of(), this::varSet),
             };
         }
     }
@@ -218,24 +223,24 @@ public class HostEnv {
             return config.get(key);
         }
 
-        private Value[] configGet(Instance instance, Value... args) {
-            long ptr = args[0].asLong();
+        private long[] configGet(Instance instance, long... args) {
+            long ptr = args[0];
             String key = memory().readString(ptr);
             String value = get(key);
-            Value result;
+            long result;
             if (value == null) {
                 // Value not found
-                result = i64(0);
+                result = 0;
             } else {
                 long rPtr = memory().writeString(value);
-                result = i64(rPtr);
+                result = rPtr;
             }
-            return new Value[]{result};
+            return new long[]{result};
         }
 
         HostFunction[] toHostFunctions() {
             return new HostFunction[]{
-                    new HostFunction(this::configGet, Kernel.IMPORT_MODULE_NAME, "config_get", List.of(ValueType.I64), List.of(ValueType.I64))
+                    new HostFunction(Kernel.IMPORT_MODULE_NAME, "config_get", List.of(ValueType.I64), List.of(ValueType.I64), this::configGet)
             };
         }
 
