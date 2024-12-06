@@ -2,8 +2,8 @@ package org.extism.chicory.sdk;
 
 import com.dylibso.chicory.experimental.aot.AotMachine;
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.Parser;
+import com.dylibso.chicory.wasm.WasmModule;
 
 import java.nio.file.Path;
 
@@ -11,7 +11,7 @@ class ChicoryModule {
 
     static final boolean IS_NATIVE_IMAGE_AOT = Boolean.getBoolean("com.oracle.graalvm.isaot");
 
-    static Module fromWasm(ManifestWasm m) {
+    static WasmModule fromWasm(ManifestWasm m) {
         if (m instanceof ManifestWasmBytes) {
             ManifestWasmBytes mwb = (ManifestWasmBytes) m;
             return Parser.parse(mwb.bytes);
