@@ -15,4 +15,17 @@ public class CurrentPlugin {
         return plugin.memory();
     }
 
+
+    void setInput(byte[] input) {
+        plugin.setInput(input);
+    }
+
+    byte[] getOutput() {
+        return plugin.getOutput();
+    }
+
+    String getError() {
+        return plugin.getError();
+    }
+
 }
