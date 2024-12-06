@@ -3,20 +3,15 @@ package org.extism.chicory.sdk;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.wasm.types.Value;
 import junit.framework.TestCase;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class ExtismHostFunctionTest extends TestCase {
     public void testFunction() {
         var f = ExtismHostFunction.of("myfunc", List.of(), List.of(),
-                (CurrentPlugin p, long... args) -> {
-                    p.log().log(LogLevel.INFO, "hello world");
-                    return null;
-        });
+                (CurrentPlugin p, ExtismValueList args, ExtismValueList results) ->
+                        p.log().log(LogLevel.INFO, "hello world"));
 
         var manifest = Manifest.ofWasms(
                 ManifestWasm.fromUrl(
