@@ -13,7 +13,9 @@ class CachedAotMachineFactory implements Function<Instance, Machine> {
     private final Map<WasmModule, AotMachineFactory> factories = new HashMap<>();
 
     public CachedAotMachineFactory compile(WasmModule wasmModule) {
-        factories.put(wasmModule, new AotMachineFactory(wasmModule));
+        if (!factories.containsKey(wasmModule)) {
+            factories.put(wasmModule, new AotMachineFactory(wasmModule));
+        }
         return this;
     }
 
