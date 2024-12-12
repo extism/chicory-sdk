@@ -1,5 +1,7 @@
 package org.extism.chicory.sdk;
 
+import com.dylibso.chicory.wasi.WasiOptions;
+
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +16,7 @@ public class Manifest {
         boolean aot;
         EnumSet<Validation> validationFlags = EnumSet.noneOf(Validation.class);
         Map<String, String> config;
+        WasiOptions wasiOptions;
 
         public Options withAoT() {
             this.aot = true;
@@ -29,6 +32,12 @@ public class Manifest {
             this.validationFlags.addAll(List.of(vs));
             return this;
         }
+
+        public Options withWasi(WasiOptions wasiOptions) {
+            this.wasiOptions = wasiOptions;
+            return this;
+        }
+
     }
 
 

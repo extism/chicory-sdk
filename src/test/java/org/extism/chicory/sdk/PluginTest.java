@@ -1,8 +1,15 @@
 package org.extism.chicory.sdk;
 
+import com.dylibso.chicory.wasi.WasiOptions;
+import com.google.common.jimfs.Configuration;
+import com.google.common.jimfs.Jimfs;
 import junit.framework.TestCase;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,7 +17,7 @@ import java.util.Map;
 public class PluginTest extends TestCase {
 
     public void testGreet() {
-        var url = "https://github.com/extism/plugins/releases/download/v1.1.0/greet.wasm";
+        var url = "https://github.com/extism/plugins/releases/download/v1.1.1/greet.wasm";
         var wasm = ManifestWasm.fromUrl(url).build();
         var manifest = Manifest.ofWasms(wasm).build();
         var plugin = Plugin.ofManifest(manifest).build();
@@ -20,9 +27,9 @@ public class PluginTest extends TestCase {
     }
 
     public void testGreetAoT() {
-        var url = "https://github.com/extism/plugins/releases/download/v1.1.0/greet.wasm";
+        var url = "https://github.com/extism/plugins/releases/download/v1.1.1/greet.wasm";
         var wasm = ManifestWasm.fromUrl(url).build();
-        var manifest = Manifest.ofWasms(wasm).build();
+        var manifest = Manifest.ofWasms(wasm).withOptions(new Manifest.Options().withAoT()).build();
         var plugin = Plugin.ofManifest(manifest).build();
         var input = "Benjamin";
         var result = new String(plugin.call("greet", input.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);
@@ -30,7 +37,7 @@ public class PluginTest extends TestCase {
     }
 
     public void testCountVowels() {
-        var url = "https://github.com/extism/plugins/releases/latest/download/count_vowels.wasm";
+        var url = "https://github.com/extism/plugins/releases/download/v1.1.1/count_vowels.wasm";
         var wasm = ManifestWasm.fromUrl(url).build();
         var manifest = Manifest.ofWasms(wasm).build();
         var plugin = Plugin.ofManifest(manifest).build();
@@ -55,7 +62,7 @@ public class PluginTest extends TestCase {
     }
 
     public void testCountVowelsWithConfig() {
-        var url = "https://github.com/extism/plugins/releases/latest/download/count_vowels.wasm";
+        var url = "https://github.com/extism/plugins/releases/download/v1.1.1/count_vowels.wasm";
         var wasm = ManifestWasm.fromUrl(url).build();
         var config = Map.of("vowels", "aeiouyAEIOUY");
         var manifest = Manifest.ofWasms(wasm)
@@ -70,7 +77,7 @@ public class PluginTest extends TestCase {
     }
 
     public void testCountVowelsKVStore() {
-        var url = "https://github.com/extism/plugins/releases/latest/download/count_vowels_kvstore.wasm";
+        var url = "https://github.com/extism/plugins/releases/download/v1.1.1/count_vowels_kvstore.wasm";
         var wasm = ManifestWasm.fromUrl(url).build();
         var manifest = Manifest.ofWasms(wasm).build();
 
@@ -118,6 +125,35 @@ public class PluginTest extends TestCase {
         var output = plugin.call("count_vowels", "Yellow, World!".getBytes(StandardCharsets.UTF_8));
         var result = new String(output, StandardCharsets.UTF_8);
         assertEquals("{\"count\":3,\"total\":3,\"vowels\":\"aeiouAEIOU\"}", result);
+    }
+
+
+    public void testWasi() throws IOException {
+        var url = "https://github.com/extism/plugins/releases/download/v1.1.1/read_write.wasm";
+        var wasm = ManifestWasm.fromUrl(url).build();
+        try (var fs = Jimfs.newFileSystem(
+                Configuration.unix().toBuilder().setAttributeViews("unix").build())) {
+
+            Path tmp = fs.getPath("tmp");
+            Files.createDirectory(tmp);
+            Path path = tmp.resolve("hello.txt");
+
+            var config = Map.of("path", path.toString());
+            var manifest = Manifest.ofWasms(wasm)
+                    .withOptions(new Manifest.Options()
+                            .withConfig(config)
+                            .withWasi(WasiOptions.builder()
+                                    .withArguments(List.of("read_write"))
+                                    .withDirectory("/tmp", tmp).build())).build();
+            var plugin = Plugin.ofManifest(manifest).build();
+
+
+            Files.writeString(path, "hello world", StandardOpenOption.CREATE);
+            var output = plugin.call("try_read", new byte[0]);
+
+            var result = new String(output, StandardCharsets.UTF_8);
+            assertEquals("hello world", result);
+        }
     }
 
 }

@@ -3,10 +3,13 @@ package org.extism.chicory.sdk;
 import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.wasm.Parser;
+import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.ValueType;
 
 import java.util.List;
+import java.util.function.Function;
 
 public class Kernel {
     static final String IMPORT_MODULE_NAME = "extism:host/env";
@@ -33,7 +36,11 @@ public class Kernel {
     final ExportFunction memoryBytes;
 
     public Kernel() {
-        Instance kernel = instance();
+        this(null);
+    }
+
+    Kernel(CachedAotMachineFactory machineFactory) {
+        Instance kernel = instance(machineFactory);
         instanceMemory = kernel.memory();
         alloc = kernel.export("alloc");
         free = kernel.export("free");
@@ -57,9 +64,13 @@ public class Kernel {
         memoryBytes = kernel.export("memory_bytes");
     }
 
-    public static Instance instance() {
+    private static Instance instance(CachedAotMachineFactory machineFactory) {
         var kernelStream = Kernel.class.getClassLoader().getResourceAsStream("extism-runtime.wasm");
-        return Instance.builder(Parser.parse(kernelStream)).build();
+        WasmModule module = Parser.parse(kernelStream);
+        if (machineFactory != null) {
+            machineFactory.compile(module);
+        }
+        return Instance.builder(module).withMachineFactory(machineFactory).build();
     }
 
     public void setInput(byte[] input) {

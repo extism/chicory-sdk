@@ -29,13 +29,13 @@ class ChicoryModule {
         }
     }
 
-    static Instance.Builder instanceWithOptions(Instance.Builder m, Manifest.Options opts) {
+    static Instance.Builder instanceWithOptions(Instance.Builder m, Manifest.Options opts, CachedAotMachineFactory aotMachineFactory) {
         if (opts == null) {
             return m;
         }
         // This feature is not compatibly with the native-image builder.
         if (opts.aot && !IS_NATIVE_IMAGE_AOT) {
-            m.withMachineFactory(AotMachine::new);
+            m.withMachineFactory(aotMachineFactory);
         }
         if (!opts.validationFlags.isEmpty()) {
             throw new UnsupportedOperationException("Validation flags are not supported yet");
