@@ -47,12 +47,11 @@ class Linker {
         dg.registerFunctions(hostEnv.toHostFunctions());
 
         // Register the WASI host functions.
-        dg.registerFunctions(new WasiPreview1(logger,
-                WasiOptions.builder()
-                        .withArguments(List.of("main"))
-                        .withStdout(System.out)
-                        .withStderr(System.err)
-                        .build()).toHostFunctions());
+        dg.registerFunctions(new WasiPreview1(
+                logger,
+                manifest.options == null ?
+                        Manifest.Options.defaultWasiOptions() :
+                        manifest.options.wasiOptions).toHostFunctions());
 
         // Register the user-provided host functions.
         dg.registerFunctions(Arrays.stream(this.hostFunctions)
@@ -64,7 +63,7 @@ class Linker {
 
         // Instantiate the main module, and, recursively, all of its dependencies.
         Instance main = dg.instantiate();
-    
+
         Plugin p = new Plugin(main, hostEnv);
         CurrentPlugin curr = new CurrentPlugin(p);
 

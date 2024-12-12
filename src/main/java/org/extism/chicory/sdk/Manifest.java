@@ -16,7 +16,7 @@ public class Manifest {
         boolean aot;
         EnumSet<Validation> validationFlags = EnumSet.noneOf(Validation.class);
         Map<String, String> config;
-        WasiOptions wasiOptions = null;
+        WasiOptions wasiOptions = defaultWasiOptions();
 
         public Options withAoT() {
             this.aot = true;
@@ -33,10 +33,19 @@ public class Manifest {
             return this;
         }
 
-        public Options withWasiOptions(WasiOptions wasiOptions) {
+        public Options withWasi(WasiOptions wasiOptions) {
             this.wasiOptions = wasiOptions;
             return this;
         }
+
+        static WasiOptions defaultWasiOptions() {
+            return WasiOptions.builder()
+                    .withArguments(List.of("main"))
+                    .withStdout(System.out)
+                    .withStderr(System.err)
+                    .build();
+        }
+
     }
 
 
