@@ -29,7 +29,7 @@ public class PluginTest extends TestCase {
     public void testGreetAoT() {
         var url = "https://github.com/extism/plugins/releases/download/v1.1.1/greet.wasm";
         var wasm = ManifestWasm.fromUrl(url).build();
-        var manifest = Manifest.ofWasms(wasm).build();
+        var manifest = Manifest.ofWasms(wasm).withOptions(new Manifest.Options().withAoT()).build();
         var plugin = Plugin.ofManifest(manifest).build();
         var input = "Benjamin";
         var result = new String(plugin.call("greet", input.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);

@@ -37,17 +37,20 @@ class Linker {
 
         Map<String, String> config;
         WasiOptions wasiOptions;
+        CachedAotMachineFactory aotMachineFactory;
         if (manifest.options == null) {
             config = Map.of();
             wasiOptions = null;
+            aotMachineFactory = null;
         } else {
             dg.setOptions(manifest.options);
             config = manifest.options.config;
             wasiOptions = manifest.options.wasiOptions;
+            aotMachineFactory = manifest.options.aot? new CachedAotMachineFactory() : null;
         }
 
         // Register the HostEnv exports.
-        var hostEnv = new HostEnv(new Kernel(), config, logger);
+        var hostEnv = new HostEnv(new Kernel(aotMachineFactory), config, logger);
         dg.registerFunctions(hostEnv.toHostFunctions());
 
         // Register the WASI host functions.
@@ -56,7 +59,6 @@ class Linker {
                     new WasiPreview1(
                             logger, wasiOptions).toHostFunctions());
         }
-
 
         // Register the user-provided host functions.
         dg.registerFunctions(Arrays.stream(this.hostFunctions)
