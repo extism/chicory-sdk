@@ -36,22 +36,30 @@ class Linker {
     }
 
     Plugin link() {
-
         var dg = new DependencyGraph(logger);
-        dg.setOptions(manifest.options);
+
+        Map<String, String> config;
+        WasiOptions wasiOptions;
+        if (manifest.options == null) {
+            config = Map.of();
+            wasiOptions = null;
+        } else {
+            dg.setOptions(manifest.options);
+            config = manifest.options.config;
+            wasiOptions = manifest.options.wasiOptions;
+        }
 
         // Register the HostEnv exports.
-        Map<String, String> config =
-                manifest.options != null ? manifest.options.config : Map.of();
         var hostEnv = new HostEnv(new Kernel(), config, logger);
         dg.registerFunctions(hostEnv.toHostFunctions());
 
         // Register the WASI host functions.
-        dg.registerFunctions(new WasiPreview1(
-                logger,
-                manifest.options == null ?
-                        Manifest.Options.defaultWasiOptions() :
-                        manifest.options.wasiOptions).toHostFunctions());
+        if (wasiOptions != null) {
+            dg.registerFunctions(
+                    new WasiPreview1(
+                            logger, wasiOptions).toHostFunctions());
+        }
+
 
         // Register the user-provided host functions.
         dg.registerFunctions(Arrays.stream(this.hostFunctions)
