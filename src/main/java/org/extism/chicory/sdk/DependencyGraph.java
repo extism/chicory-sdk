@@ -4,12 +4,11 @@ import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.ImportFunction;
-import com.dylibso.chicory.runtime.ImportValue;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Store;
 import com.dylibso.chicory.runtime.WasmFunctionHandle;
-import com.dylibso.chicory.wasm.Module;
+import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.Export;
 import com.dylibso.chicory.wasm.types.ExportSection;
 import com.dylibso.chicory.wasm.types.ExternalType;
@@ -17,7 +16,6 @@ import com.dylibso.chicory.wasm.types.FunctionImport;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Import;
 import com.dylibso.chicory.wasm.types.ImportSection;
-import com.dylibso.chicory.wasm.types.Value;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,7 +34,7 @@ class DependencyGraph {
     private final Logger logger;
 
     private final Map<String, Set<String>> registeredSymbols = new HashMap<>();
-    private final Map<String, Module> modules = new HashMap<>();
+    private final Map<String, WasmModule> modules = new HashMap<>();
     private final Set<String> hostModules = new HashSet<>();
     private final Map<String, Instance> instances = new HashMap<>();
     private final Map<QualifiedName, Trampoline> trampolines = new HashMap<>();
@@ -93,7 +91,7 @@ class DependencyGraph {
     /**
      * Register a Module with the given name.
      */
-    public void registerModule(String name, Module m) {
+    public void registerModule(String name, WasmModule m) {
         checkCollision(name, null);
 
         ExportSection exportSection = m.exportSection();
@@ -113,7 +111,7 @@ class DependencyGraph {
     public boolean validate() {
         boolean valid = true;
         for (var kv : modules.entrySet()) {
-            Module m = kv.getValue();
+            WasmModule m = kv.getValue();
 
             ImportSection imports = m.importSection();
             for (int i = 0; i < imports.importCount(); i++) {
@@ -156,7 +154,7 @@ class DependencyGraph {
 
         while (!unresolved.isEmpty()) {
             String moduleId = unresolved.peek();
-            Module m = this.modules.get(moduleId);
+            WasmModule m = this.modules.get(moduleId);
             boolean satisfied = true;
             List<HostFunction> trampolines = new ArrayList<>();
             ImportSection imports = m.importSection();
@@ -217,7 +215,7 @@ class DependencyGraph {
     }
 
     private Instance instantiate(String moduleId, List<HostFunction> moreHostFunctions) {
-        Module m = this.modules.get(moduleId);
+        WasmModule m = this.modules.get(moduleId);
         Objects.requireNonNull(m);
 
         ImportValues importValues =
@@ -253,7 +251,7 @@ class DependencyGraph {
                 .addTable(hostImports.tables()).build();
     }
 
-    private HostFunction registerTrampoline(FunctionImport f, Module m) {
+    private HostFunction registerTrampoline(FunctionImport f, WasmModule m) {
         // Trampolines are singletons for each <moduleName, name> pair.
         // Trampolines are not registered into the store, as they are not "real" functions.
         // They are instead kept separately and passed explicitly to the instance.
