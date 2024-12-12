@@ -28,7 +28,14 @@ class Linker {
         this.logger = logger;
     }
 
-    public Plugin link() {
+    // Note: this is really doing nothing besides wrapping
+    // the linker, because, at this time, we do not really have a concept
+    // of CompiledPlugin in Chicory.
+    CompiledPlugin compile() {
+        return new CompiledPlugin(this);
+    }
+
+    Plugin link() {
 
         var dg = new DependencyGraph(logger);
         dg.setOptions(manifest.options);

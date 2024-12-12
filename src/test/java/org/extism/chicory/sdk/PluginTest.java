@@ -120,4 +120,6 @@ public class PluginTest extends TestCase {
         assertEquals("{\"count\":3,\"total\":3,\"vowels\":\"aeiouAEIOU\"}", result);
     }
 
+
+
 }
