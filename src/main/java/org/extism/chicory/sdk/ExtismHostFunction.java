@@ -2,8 +2,6 @@ package org.extism.chicory.sdk;
 
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.wasm.types.Value;
-import com.dylibso.chicory.wasm.types.ValueType;
 
 import java.util.List;
 
@@ -12,39 +10,39 @@ public final class ExtismHostFunction {
 
     public static ExtismHostFunction of(
             String name,
-            List<ValueType> paramTypes,
-            List<ValueType> returnTypes,
-            Handle handle) {
-        return new ExtismHostFunction(DEFAULT_NAMESPACE, name, handle, paramTypes, returnTypes);
+            List<ExtismValType> paramTypes,
+            List<ExtismValType> returnTypes,
+            ExtismFunction extismFunction) {
+        return new ExtismHostFunction(DEFAULT_NAMESPACE, name, paramTypes, returnTypes, extismFunction);
     }
 
     public static ExtismHostFunction of(
             String module,
             String name,
-            Handle handle,
-            List<ValueType> paramTypes,
-            List<ValueType> returnTypes) {
-        return new ExtismHostFunction(module, name, handle, paramTypes, returnTypes);
+            ExtismFunction extismFunction,
+            List<ExtismValType> paramTypes,
+            List<ExtismValType> returnTypes) {
+        return new ExtismHostFunction(module, name, paramTypes, returnTypes, extismFunction);
     }
 
     private final String module;
     private final String name;
-    private final Handle handle;
-    private final List<ValueType> paramTypes;
-    private final List<ValueType> returnTypes;
+    private final ExtismFunction extismFunction;
+    private final ExtismValTypeList paramTypes;
+    private final ExtismValTypeList returnTypes;
     private CurrentPlugin currentPlugin;
 
-    ExtismHostFunction(
+    private ExtismHostFunction(
             String module,
             String name,
-            Handle handle,
-            List<ValueType> paramTypes,
-            List<ValueType> returnTypes) {
+            List<ExtismValType> paramTypes,
+            List<ExtismValType> returnTypes,
+            ExtismFunction extismFunction) {
         this.module = module;
         this.name = name;
-        this.handle = handle;
-        this.paramTypes = paramTypes;
-        this.returnTypes = returnTypes;
+        this.paramTypes = new ExtismValTypeList(paramTypes);
+        this.returnTypes = new ExtismValTypeList(returnTypes);
+        this.extismFunction = extismFunction;
     }
 
     public void bind(CurrentPlugin p) {
@@ -58,12 +56,13 @@ public final class ExtismHostFunction {
 
     final HostFunction asHostFunction() {
         return new HostFunction(
-                module, name, paramTypes, returnTypes,
-                (Instance inst, long... args) -> handle.apply(this.currentPlugin, args));
+                module, name, paramTypes.toChicoryTypes(), returnTypes.toChicoryTypes(),
+                (Instance inst, long... args) -> {
+                    var params = paramTypes.toExtismValueList(args);
+                    var results = returnTypes.toExtismValueList();
+                    extismFunction.apply(this.currentPlugin, params, results);
+                    return results.unwrap();
+                });
     }
 
-    @FunctionalInterface
-    public interface Handle {
-        long[] apply(CurrentPlugin currentPlugin, long... args);
-    }
 }

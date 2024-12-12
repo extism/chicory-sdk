@@ -7,11 +7,10 @@ import com.dylibso.chicory.runtime.Instance;
 
 /**
  * A Plugin instance.
- *
+ * <p>
  * Plugins can be instantiated using a {@link Plugin.Builder}, returned
  * by {@link Plugin#ofManifest(Manifest)}. The Builder allows to set options
  * on the Plugin, such as {@link HostFunction}s and the {@link Logger}.
- *
  */
 public class Plugin {
 
@@ -63,14 +62,27 @@ public class Plugin {
         return hostEnv.memory();
     }
 
+    void setInput(byte[] input) {
+        hostEnv.setInput(input);
+    }
+
+    byte[] getOutput() {
+        return hostEnv.getOutput();
+    }
+
+    String getError() {
+        return hostEnv.getError();
+    }
+
+
     public byte[] call(String funcName, byte[] input) {
         var func = mainInstance.export(funcName);
-        hostEnv.setInput(input);
+        setInput(input);
         var result = func.apply()[0];
         if (result == 0) {
-            return hostEnv.getOutput();
+            return getOutput();
         } else {
-            String error = hostEnv.getError();
+            String error = getError();
             throw new ExtismFunctionException(funcName, error);
         }
     }
