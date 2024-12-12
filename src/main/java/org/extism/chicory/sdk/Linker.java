@@ -28,9 +28,6 @@ class Linker {
         this.logger = logger;
     }
 
-    // Note: this is really doing nothing besides wrapping
-    // the linker, because, at this time, we do not really have a concept
-    // of CompiledPlugin in Chicory.
     CompiledPlugin compile() {
         return new CompiledPlugin(this);
     }
