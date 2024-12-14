@@ -49,7 +49,15 @@ public class HostEnv {
                 kernel.toHostFunctions(),
                 log.toHostFunctions(),
                 var.toHostFunctions(),
-                config.toHostFunctions());
+                config.toHostFunctions(),
+                new HostFunction[] {
+                        new HostFunction("extism:host/env", "http_request", List.of(ValueType.I64, ValueType.I64), List.of(ValueType.I64), (Instance instance, long... in)->{
+                            throw new IllegalArgumentException("not yet implemented: http_request");
+                        }),
+                        new HostFunction("extism:host/env", "http_status_code", List.of(), List.of(ValueType.I32), (Instance instance, long... in)->{
+                            throw new IllegalArgumentException("not yet implemented: http_status_code");
+                        }),
+                });
     }
 
     private HostFunction[] concat(HostFunction[]... hfs) {
