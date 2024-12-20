@@ -3,16 +3,20 @@ package org.extism.chicory.sdk;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
+import jakarta.json.Json;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static com.dylibso.chicory.wasm.types.Value.i64;
 
 public class HostEnv {
 
@@ -22,6 +26,7 @@ public class HostEnv {
     private final Log log;
     private final Var var;
     private final Config config;
+    private final Http http;
 
     public HostEnv(Kernel kernel, Map<String, String> config, Logger logger) {
         this.kernel = kernel;
@@ -30,6 +35,7 @@ public class HostEnv {
         this.config = new Config(config);
         this.var = new Var();
         this.log = new Log();
+        this.http = new Http();
     }
 
     public Log log() {
@@ -44,12 +50,17 @@ public class HostEnv {
         return config;
     }
 
+    public Http http() {
+        return http;
+    }
+
     public HostFunction[] toHostFunctions() {
         return concat(
                 kernel.toHostFunctions(),
                 log.toHostFunctions(),
                 var.toHostFunctions(),
-                config.toHostFunctions());
+                config.toHostFunctions(),
+                http.toHostFunctions());
     }
 
     private HostFunction[] concat(HostFunction[]... hfs) {
@@ -108,7 +119,8 @@ public class HostEnv {
     }
 
     public class Log {
-        private Log(){}
+        private Log() {
+        }
 
         public void log(LogLevel level, String message) {
             logger.log(level.toChicoryLogLevel(), message, null);
@@ -156,9 +168,10 @@ public class HostEnv {
     }
 
     public class Var {
-        private final Map<String, byte[]> vars =  new ConcurrentHashMap<>();
+        private final Map<String, byte[]> vars = new ConcurrentHashMap<>();
 
-        private Var() {}
+        private Var() {
+        }
 
         public byte[] get(String key) {
             return vars.get(key);
@@ -246,7 +259,134 @@ public class HostEnv {
 
     }
 
+    public class Http {
+        HttpClient httpClient;
+        HttpResponse<byte[]> lastResponse;
+
+        public HttpClient httpClient() {
+            if (httpClient == null) {
+                httpClient = HttpClient.newHttpClient();
+            }
+            return httpClient;
+        }
+
+        long[] request(Instance instance, long... args) {
+            var result = new long[1];
+
+            // FIXME:
+            // 		// deny all requests by default
+            //		hostMatches := false
+            //		for _, allowedHost := range plugin.AllowedHosts {
+            //			if allowedHost == url.Hostname() {
+            //				hostMatches = true
+            //				break
+            //			}
+            //
+            //			pattern := glob.MustCompile(allowedHost)
+            //			if pattern.Match(url.Hostname()) {
+            //				hostMatches = true
+            //				break
+            //			}
+            //		}
+            //
+            //		if !hostMatches {
+            //			panic(fmt.Errorf("HTTP request to '%v' is not allowed", request.Url))
+            //		}
+
+            var requestOffset = args[0];
+            var bodyOffset = args[1];
+
+            var requestJson = memory().readBytes(requestOffset);
+            kernel.free.apply(requestOffset);
+
+            HttpRequest.BodyPublisher bodyPublisher;
+            if (bodyOffset == 0) {
+                bodyPublisher = HttpRequest.BodyPublishers.noBody();
+            } else {
+                var requestBody = memory().readBytes(bodyOffset);
+                kernel.free.apply(bodyOffset);
+                bodyPublisher = HttpRequest.BodyPublishers.ofByteArray(requestBody);
+            }
+            var request = Json.createReader(new ByteArrayInputStream(requestJson))
+                    .readObject();
+
+            var method = request.getJsonString("method").getString();
+            var uri = URI.create(request.getJsonString("url").getString());
+            var headers = request.getJsonObject("headers");
+
+            var reqBuilder = HttpRequest.newBuilder().uri(uri);
+            for (var key : headers.keySet()) {
+                reqBuilder.header(key, headers.getString(key));
+            }
+
+            var req = reqBuilder.method(method, bodyPublisher).build();
+
+            try {
+                this.lastResponse =
+                        httpClient().send(req, HttpResponse.BodyHandlers.ofByteArray());
+                byte[] body = lastResponse.body();
+                if (body.length == 0) {
+                    result[0] = 0;
+                } else {
+                    result[0] = memory().writeBytes(lastResponse.body());
+                }
+            } catch (IOException | InterruptedException e) {
+                // FIXME gracefully handle the interruption
+                throw new ExtismException(e);
+            }
+
+            return result;
+        }
+
+        long[] statusCode(Instance instance, long... args) {
+            return new long[]{lastResponse == null ? 0 : lastResponse.statusCode()};
+        }
 
 
+        long[] headers(Instance instance, long[] longs) {
+            var result = new long[1];
+            if (lastResponse == null) {
+                return result;
+            }
+
+            // FIXME duplicated headers are effectively overwriting duplicate values!
+            var objBuilder = Json.createObjectBuilder();
+            for (var entry : lastResponse.headers().map().entrySet()) {
+                for (var v : entry.getValue()) {
+                    objBuilder.add(entry.getKey(), v);
+                }
+            }
+
+            var bytes = objBuilder.build().toString().getBytes(StandardCharsets.UTF_8);
+            result[0] = memory().writeBytes(bytes);
+            return result;
+        }
+
+
+        public HostFunction[] toHostFunctions() {
+            return new HostFunction[]{
+                    new HostFunction(
+                            Kernel.IMPORT_MODULE_NAME,
+                            "http_request",
+                            List.of(ValueType.I64, ValueType.I64),
+                            List.of(ValueType.I64),
+                            this::request),
+                    new HostFunction(
+                            Kernel.IMPORT_MODULE_NAME,
+                            "http_status_code",
+                            List.of(),
+                            List.of(ValueType.I32),
+                            this::statusCode),
+                    new HostFunction(
+                            Kernel.IMPORT_MODULE_NAME,
+                            "http_headers",
+                            List.of(),
+                            List.of(ValueType.I64),
+                            this::headers),
+
+            };
+        }
+
+    }
 
 }
