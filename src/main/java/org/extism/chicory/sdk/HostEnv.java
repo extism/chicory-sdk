@@ -3,13 +3,8 @@ package org.extism.chicory.sdk;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import jakarta.json.Json;
-import jakarta.json.JsonReader;
-import jakarta.json.JsonString;
-import jakarta.json.JsonValue;
-import jakarta.json.stream.JsonParser;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -22,8 +17,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static com.dylibso.chicory.wasm.types.Value.i64;
 
 public class HostEnv {
 
@@ -55,6 +48,10 @@ public class HostEnv {
 
     public Config config() {
         return config;
+    }
+
+    public Http http() {
+        return http;
     }
 
     public HostFunction[] toHostFunctions() {
@@ -273,7 +270,7 @@ public class HostEnv {
             return httpClient;
         }
 
-        private long[] request(Instance instance, long... args) {
+        long[] request(Instance instance, long... args) {
             var result = new long[1];
 
             // FIXME:
@@ -318,12 +315,11 @@ public class HostEnv {
             var headers = request.getJsonObject("headers");
 
             var reqBuilder = HttpRequest.newBuilder().uri(uri);
-            for (var kv : headers.entrySet()) {
-                reqBuilder.header(kv.getKey(), kv.getValue().toString());
+            for (var key : headers.keySet()) {
+                reqBuilder.header(key, headers.getString(key));
             }
 
-            reqBuilder.method(method, bodyPublisher);
-            var req = reqBuilder.build();
+            var req = reqBuilder.method(method, bodyPublisher).build();
 
             try {
                 this.lastResponse =
@@ -342,12 +338,12 @@ public class HostEnv {
             return result;
         }
 
-        public long[] statusCode(Instance instance, long... args) {
+        long[] statusCode(Instance instance, long... args) {
             return new long[]{lastResponse == null ? 0 : lastResponse.statusCode()};
         }
 
 
-        private long[] headers(Instance instance, long[] longs) {
+        long[] headers(Instance instance, long[] longs) {
             var result = new long[1];
             if (lastResponse == null) {
                 return result;
@@ -385,7 +381,7 @@ public class HostEnv {
                             Kernel.IMPORT_MODULE_NAME,
                             "http_headers",
                             List.of(),
-                            List.of(ValueType.I32),
+                            List.of(ValueType.I64),
                             this::headers),
 
             };
