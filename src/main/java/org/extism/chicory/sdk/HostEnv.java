@@ -5,6 +5,7 @@ import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.types.ValueType;
 import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -14,6 +15,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -287,20 +289,43 @@ public class HostEnv {
             var requestJson = memory().readBytes(requestOffset);
             kernel.free.apply(requestOffset);
 
-            HttpRequest.BodyPublisher bodyPublisher;
+            byte[] requestBody;
             if (bodyOffset == 0) {
-                bodyPublisher = HttpRequest.BodyPublishers.noBody();
+                requestBody = new byte[0];
             } else {
-                var requestBody = memory().readBytes(bodyOffset);
+                requestBody = memory().readBytes(bodyOffset);
                 kernel.free.apply(bodyOffset);
-                bodyPublisher = HttpRequest.BodyPublishers.ofByteArray(requestBody);
             }
+
             var request = Json.createReader(new ByteArrayInputStream(requestJson))
                     .readObject();
 
             var method = request.getJsonString("method").getString();
             var uri = URI.create(request.getJsonString("url").getString());
             var headers = request.getJsonObject("headers");
+
+            Map<String, String> headersMap = new HashMap<>();
+            for (var key : headers.keySet()) {
+                headersMap.put(key, headers.getString(key));
+            }
+
+            byte[] body = request(method, uri, headersMap, requestBody);
+            if (body.length == 0) {
+                result[0] = 0;
+            } else {
+                result[0] = memory().writeBytes(body);
+            }
+
+            return result;
+        }
+
+        byte[] request(String method, URI uri, Map<String, String> headers, byte[] requestBody) {
+            HttpRequest.BodyPublisher bodyPublisher;
+            if (requestBody.length == 0) {
+                bodyPublisher = HttpRequest.BodyPublishers.noBody();
+            } else {
+                bodyPublisher = HttpRequest.BodyPublishers.ofByteArray(requestBody);
+            }
 
             var host = uri.getHost();
             if (Arrays.stream(hostPatterns).anyMatch(p -> !p.matches(host))) {
@@ -309,7 +334,7 @@ public class HostEnv {
 
             var reqBuilder = HttpRequest.newBuilder().uri(uri);
             for (var key : headers.keySet()) {
-                reqBuilder.header(key, headers.getString(key));
+                reqBuilder.header(key, headers.get(key));
             }
 
             var req = reqBuilder.method(method, bodyPublisher).build();
@@ -317,18 +342,11 @@ public class HostEnv {
             try {
                 this.lastResponse =
                         httpClient().send(req, HttpResponse.BodyHandlers.ofByteArray());
-                byte[] body = lastResponse.body();
-                if (body.length == 0) {
-                    result[0] = 0;
-                } else {
-                    result[0] = memory().writeBytes(lastResponse.body());
-                }
+                return lastResponse.body();
             } catch (IOException | InterruptedException e) {
                 // FIXME gracefully handle the interruption
                 throw new ExtismException(e);
             }
-
-            return result;
         }
 
         long[] statusCode(Instance instance, long... args) {

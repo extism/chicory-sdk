@@ -109,7 +109,12 @@
       <version>${jakarta.json-api.version}</version>
       <optional>true</optional>
     </dependency>
-
+    <dependency>
+      <groupId>org.eclipse.parsson</groupId>
+      <artifactId>jakarta.json</artifactId>
+      <version>1.1.7</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <profiles>
