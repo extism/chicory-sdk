@@ -1,4 +1,4 @@
-package org.extism.chicory.sdk;
+package org.extism.sdk.chicory;
 
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.runtime.HostFunction;
@@ -7,7 +7,6 @@ import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 
 
@@ -59,8 +58,11 @@ class Linker {
         // Register the WASI host functions.
         if (wasiOptions != null) {
             dg.registerFunctions(
-                    new WasiPreview1(
-                            logger, wasiOptions).toHostFunctions());
+                     WasiPreview1.builder()
+                             .withLogger(logger)
+                             .withOptions(wasiOptions)
+                             .build()
+                             .toHostFunctions());
         }
 
         // Register the user-provided host functions.

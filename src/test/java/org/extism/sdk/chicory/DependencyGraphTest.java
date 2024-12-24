@@ -1,4 +1,4 @@
-package org.extism.chicory.sdk;
+package org.extism.sdk.chicory;
 
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.Instance;
@@ -100,7 +100,7 @@ public class DependencyGraphTest extends TestCase {
     }
 
     private WasiPreview1 wasiPreview1() {
-        return new WasiPreview1(new SystemLogger());
+        return WasiPreview1.builder().build();
     }
 
 }

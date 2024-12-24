@@ -1,4 +1,4 @@
-package org.extism.chicory.sdk;
+package org.extism.sdk.chicory;
 
 /**
  * A plugin that has been already processed, but not yet instantiated.

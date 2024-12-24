@@ -1,4 +1,4 @@
-package org.extism.chicory.sdk;
+package org.extism.sdk.chicory;
 
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.Parser;
