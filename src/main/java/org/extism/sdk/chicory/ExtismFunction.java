@@ -1,4 +1,4 @@
-package org.extism.chicory.sdk;
+package org.extism.sdk.chicory;
 
 @FunctionalInterface
 public interface ExtismFunction {
