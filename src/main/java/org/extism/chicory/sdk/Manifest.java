@@ -2,7 +2,6 @@ package org.extism.chicory.sdk;
 
 import com.dylibso.chicory.wasi.WasiOptions;
 
-import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
