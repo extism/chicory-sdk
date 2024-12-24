@@ -1,5 +1,6 @@
 package org.extism.chicory.sdk;
 
+import com.dylibso.chicory.experimental.aot.AotMachineFactory;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.runtime.HostFunction;
@@ -41,6 +42,7 @@ class DependencyGraph {
 
     private final Store store = new Store();
     private Manifest.Options options;
+    private CachedAotMachineFactory aotMachineFactory;
 
     public DependencyGraph(Logger logger) {
         this.logger = logger;
@@ -51,6 +53,9 @@ class DependencyGraph {
      */
     public void setOptions(Manifest.Options options) {
         this.options = options;
+        if (options != null && options.aot) {
+            this.aotMachineFactory = new CachedAotMachineFactory();
+        }
     }
 
     /**
@@ -93,6 +98,9 @@ class DependencyGraph {
      */
     public void registerModule(String name, WasmModule m) {
         checkCollision(name, null);
+        if (aotMachineFactory != null) {
+            aotMachineFactory.compile(m);
+        }
 
         ExportSection exportSection = m.exportSection();
         for (int i = 0; i < exportSection.exportCount(); i++) {
@@ -223,7 +231,7 @@ class DependencyGraph {
 
         Instance instance =
                 ChicoryModule.instanceWithOptions(
-                        Instance.builder(m), this.options)
+                        Instance.builder(m), this.options, aotMachineFactory)
                         .withImportValues(importValues)
                         .withStart(false)
                         .build();

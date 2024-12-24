@@ -38,10 +38,15 @@ public class Plugin {
             return this;
         }
 
-        public Plugin build() {
+        public CompiledPlugin compile() {
             var logger = this.logger == null ? new SystemLogger() : this.logger;
             Linker linker = new Linker(this.manifest, this.hostFunctions, logger);
-            return linker.link();
+            return linker.compile();
+        }
+
+        // Synonym for Plugin.ofManifest(Manifest).compile().instantiate();
+        public Plugin build() {
+            return compile().instantiate();
         }
     }
 
