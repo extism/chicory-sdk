@@ -267,6 +267,9 @@ public class HostEnv {
         HttpResponse<byte[]> lastResponse;
 
         public Http(String[] allowedHosts) {
+            if (allowedHosts == null) {
+                allowedHosts = new String[0];
+            }
             this.hostPatterns = new HostPattern[allowedHosts.length];
             for (int i = 0; i < allowedHosts.length; i++) {
                 this.hostPatterns[i] = new HostPattern(allowedHosts[i]);
@@ -328,7 +331,7 @@ public class HostEnv {
             }
 
             var host = uri.getHost();
-            if (Arrays.stream(hostPatterns).anyMatch(p -> !p.matches(host))) {
+            if (Arrays.stream(hostPatterns).noneMatch(p -> p.matches(host))) {
                 throw new ExtismException(String.format("HTTP request to '%s' is not allowed", host));
             }
 
@@ -350,9 +353,12 @@ public class HostEnv {
         }
 
         long[] statusCode(Instance instance, long... args) {
-            return new long[]{lastResponse == null ? 0 : lastResponse.statusCode()};
+            return new long[]{statusCode()};
         }
 
+        int statusCode() {
+            return lastResponse == null ? 0 : lastResponse.statusCode();
+        }
 
         long[] headers(Instance instance, long[] longs) {
             var result = new long[1];
