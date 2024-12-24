@@ -3,13 +3,11 @@ package org.extism.chicory.sdk;
 import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.ValueType;
 
 import java.util.List;
-import java.util.function.Function;
 
 public class Kernel {
     static final String IMPORT_MODULE_NAME = "extism:host/env";

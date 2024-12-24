@@ -100,7 +100,7 @@ public class DependencyGraphTest extends TestCase {
     }
 
     private WasiPreview1 wasiPreview1() {
-        return new WasiPreview1(new SystemLogger());
+        return WasiPreview1.builder().build();
     }
 
 }
