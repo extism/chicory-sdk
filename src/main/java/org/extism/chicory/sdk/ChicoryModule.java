@@ -1,6 +1,5 @@
 package org.extism.chicory.sdk;
 
-import com.dylibso.chicory.experimental.aot.AotMachine;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
