@@ -2,6 +2,7 @@ package org.extism.chicory.sdk;
 
 import com.dylibso.chicory.wasi.WasiOptions;
 
+import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,7 @@ public class Manifest {
         EnumSet<Validation> validationFlags = EnumSet.noneOf(Validation.class);
         Map<String, String> config;
         WasiOptions wasiOptions;
+        String[] allowedHosts;
 
         public Options withAoT() {
             this.aot = true;
@@ -30,6 +32,17 @@ public class Manifest {
 
         public Options withValidation(Validation... vs) {
             this.validationFlags.addAll(List.of(vs));
+            return this;
+        }
+
+        public Options withAllowedHosts(String... allowedHosts) {
+            for (String allowedHost : allowedHosts) {
+                // Wildcards are only allowed at starting position and may occur only once.
+                if (allowedHost.indexOf('*') > 0 || allowedHost.indexOf('*', 1) != -1) {
+                    throw new ExtismException("Illegal pattern " + allowedHost);
+                }
+            }
+            this.allowedHosts = allowedHosts;
             return this;
         }
 

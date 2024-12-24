@@ -28,14 +28,14 @@ public class HostEnv {
     private final Config config;
     private final Http http;
 
-    public HostEnv(Kernel kernel, Map<String, String> config, Logger logger) {
+    public HostEnv(Kernel kernel, Map<String, String> config, String[] allowedHosts, Logger logger) {
         this.kernel = kernel;
         this.memory = new Memory();
         this.logger = logger;
         this.config = new Config(config);
         this.var = new Var();
         this.log = new Log();
-        this.http = new Http();
+        this.http = new Http(allowedHosts);
     }
 
     public Log log() {
@@ -260,8 +260,16 @@ public class HostEnv {
     }
 
     public class Http {
+        private final HostPattern[] hostPatterns;
         HttpClient httpClient;
         HttpResponse<byte[]> lastResponse;
+
+        public Http(String[] allowedHosts) {
+            this.hostPatterns = new HostPattern[allowedHosts.length];
+            for (int i = 0; i < allowedHosts.length; i++) {
+                this.hostPatterns[i] = new HostPattern(allowedHosts[i]);
+            }
+        }
 
         public HttpClient httpClient() {
             if (httpClient == null) {
@@ -272,26 +280,6 @@ public class HostEnv {
 
         long[] request(Instance instance, long... args) {
             var result = new long[1];
-
-            // FIXME:
-            // 		// deny all requests by default
-            //		hostMatches := false
-            //		for _, allowedHost := range plugin.AllowedHosts {
-            //			if allowedHost == url.Hostname() {
-            //				hostMatches = true
-            //				break
-            //			}
-            //
-            //			pattern := glob.MustCompile(allowedHost)
-            //			if pattern.Match(url.Hostname()) {
-            //				hostMatches = true
-            //				break
-            //			}
-            //		}
-            //
-            //		if !hostMatches {
-            //			panic(fmt.Errorf("HTTP request to '%v' is not allowed", request.Url))
-            //		}
 
             var requestOffset = args[0];
             var bodyOffset = args[1];
@@ -313,6 +301,11 @@ public class HostEnv {
             var method = request.getJsonString("method").getString();
             var uri = URI.create(request.getJsonString("url").getString());
             var headers = request.getJsonObject("headers");
+
+            var host = uri.getHost();
+            if (Arrays.stream(hostPatterns).anyMatch(p -> !p.matches(host))) {
+                throw new ExtismException(String.format("HTTP request to '%s' is not allowed", host));
+            }
 
             var reqBuilder = HttpRequest.newBuilder().uri(uri);
             for (var key : headers.keySet()) {
@@ -386,7 +379,36 @@ public class HostEnv {
 
             };
         }
-
     }
+
+    private static class HostPattern {
+        private final String pattern;
+        private final boolean exact;
+
+        public HostPattern(String pattern) {
+            if (pattern.indexOf('*', 1) != -1) {
+                throw new ExtismException("Illegal pattern " + pattern);
+            }
+            int wildcard = pattern.indexOf('*');
+            if (wildcard < 0) {
+                this.exact = true;
+                this.pattern = pattern;
+            } else if (wildcard == 0) {
+                this.exact = false;
+                this.pattern = pattern.substring(1);
+            } else {
+                throw new ExtismException("Illegal pattern " + pattern);
+            }
+        }
+
+        public boolean matches(String host) {
+            if (exact) {
+                return host.equals(pattern);
+            } else {
+                return host.endsWith(pattern);
+            }
+        }
+    }
+
 
 }
