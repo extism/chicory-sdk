@@ -1,6 +1,5 @@
-package org.extism.chicory.sdk;
+package org.extism.sdk.chicory;
 
-import com.dylibso.chicory.experimental.aot.AotMachineFactory;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.runtime.HostFunction;

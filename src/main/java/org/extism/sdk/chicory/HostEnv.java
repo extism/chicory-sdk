@@ -1,11 +1,10 @@
-package org.extism.chicory.sdk;
+package org.extism.sdk.chicory;
 
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.types.ValueType;
 import jakarta.json.Json;
-import jakarta.json.JsonObject;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
