@@ -74,6 +74,7 @@
     <jimfs.version>1.3.0</jimfs.version>
     <jakarta.json-api.version>2.1.3</jakarta.json-api.version>
     <jakarta.json.version>1.1.7</jakarta.json.version>
+    <okhttp.version>4.12.0</okhttp.version>
   </properties>
 
   <dependencies>
@@ -113,7 +114,8 @@
     <dependency>
       <groupId>com.squareup.okhttp3</groupId>
       <artifactId>okhttp</artifactId>
-      <version>4.12.0</version>
+      <version>${okhttp.version}</version>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.eclipse.parsson</groupId>

@@ -10,13 +10,39 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
+
 public class HttpTest extends TestCase {
 
     public void testNoAllowedHosts() {
+        noAllowedHosts(HttpConfig.defaultConfig());
+        noAllowedHosts(HttpConfig.androidConfig());
+    }
+
+    public void testAllowSingleHost() {
+        allowSingleHost(HttpConfig.defaultConfig());
+        allowSingleHost(HttpConfig.androidConfig());
+    }
+
+    public void testAllowHostPattern() {
+        allowHostPattern(HttpConfig.defaultConfig());
+        allowHostPattern(HttpConfig.androidConfig());
+    }
+
+    public void testAllowMultiHostPattern() {
+        allowMultiHostPattern(HttpConfig.defaultConfig());
+        allowMultiHostPattern(HttpConfig.androidConfig());
+    }
+
+    public void testAllowAnyHost() {
+        allowAnyHost(HttpConfig.defaultConfig());
+        allowAnyHost(HttpConfig.androidConfig());
+    }
+
+    public void noAllowedHosts(HttpConfig httpConfig) {
         var logger = new SystemLogger();
 
         var noAllowedHosts = new String[0];
-        var hostEnv = new HostEnv(new Kernel(), Map.of(), noAllowedHosts, HttpConfig.defaultConfig(), logger);
+        var hostEnv = new HostEnv(new Kernel(), Map.of(), noAllowedHosts, httpConfig, logger);
 
         try {
             hostEnv.http().request(
@@ -29,11 +55,12 @@ public class HttpTest extends TestCase {
             assertEquals("HTTP request to 'httpbin.org' is not allowed", e.getMessage());
         }
     }
-    public void testAllowSingleHost() {
+
+    public void allowSingleHost(HttpConfig httpConfig) {
         var logger = new SystemLogger();
 
         var anyHost = new String[]{"httpbin.org"};
-        var hostEnv = new HostEnv(new Kernel(), Map.of(), anyHost, HttpConfig.defaultConfig(), logger);
+        var hostEnv = new HostEnv(new Kernel(), Map.of(), anyHost, httpConfig, logger);
 
         byte[] response = hostEnv.http().request(
                 "GET",
@@ -64,11 +91,11 @@ public class HttpTest extends TestCase {
         }
     }
 
-    public void testAllowHostPattern() {
+    public void allowHostPattern(HttpConfig httpConfig) {
         var logger = new SystemLogger();
 
         var anyHost = new String[]{"*.httpbin.org"};
-        var hostEnv = new HostEnv(new Kernel(), Map.of(), anyHost, HttpConfig.defaultConfig(), logger);
+        var hostEnv = new HostEnv(new Kernel(), Map.of(), anyHost, httpConfig, logger);
 
         byte[] response = hostEnv.http().request(
                 "GET",
@@ -92,11 +119,11 @@ public class HttpTest extends TestCase {
     }
 
 
-    public void testAllowMultiHostPattern() {
+    public void allowMultiHostPattern(HttpConfig httpConfig) {
         var logger = new SystemLogger();
 
         var anyHost = new String[]{"*.httpbin.org", "httpbin.org"};
-        var hostEnv = new HostEnv(new Kernel(), Map.of(), anyHost, HttpConfig.defaultConfig(), logger);
+        var hostEnv = new HostEnv(new Kernel(), Map.of(), anyHost, httpConfig, logger);
 
         byte[] response = hostEnv.http().request(
                 "GET",
@@ -117,11 +144,11 @@ public class HttpTest extends TestCase {
     }
 
 
-    public void testAllowAnyHost() {
+    public void allowAnyHost(HttpConfig httpConfig) {
         var logger = new SystemLogger();
 
         var anyHost = new String[]{"*"};
-        var hostEnv = new HostEnv(new Kernel(), Map.of(), anyHost, HttpConfig.defaultConfig(), logger);
+        var hostEnv = new HostEnv(new Kernel(), Map.of(), anyHost, httpConfig, logger);
 
         byte[] response = hostEnv.http().request(
                 "GET",
