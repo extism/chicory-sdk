@@ -16,7 +16,7 @@ public class HttpTest extends TestCase {
         var logger = new SystemLogger();
 
         var noAllowedHosts = new String[0];
-        var hostEnv = new HostEnv(new Kernel(), Map.of(), noAllowedHosts, logger);
+        var hostEnv = new HostEnv(new Kernel(), Map.of(), noAllowedHosts, HttpConfig.defaultConfig(), logger);
 
         try {
             hostEnv.http().request(
@@ -33,7 +33,7 @@ public class HttpTest extends TestCase {
         var logger = new SystemLogger();
 
         var anyHost = new String[]{"httpbin.org"};
-        var hostEnv = new HostEnv(new Kernel(), Map.of(), anyHost, logger);
+        var hostEnv = new HostEnv(new Kernel(), Map.of(), anyHost, HttpConfig.defaultConfig(), logger);
 
         byte[] response = hostEnv.http().request(
                 "GET",
@@ -68,7 +68,7 @@ public class HttpTest extends TestCase {
         var logger = new SystemLogger();
 
         var anyHost = new String[]{"*.httpbin.org"};
-        var hostEnv = new HostEnv(new Kernel(), Map.of(), anyHost, logger);
+        var hostEnv = new HostEnv(new Kernel(), Map.of(), anyHost, HttpConfig.defaultConfig(), logger);
 
         byte[] response = hostEnv.http().request(
                 "GET",
@@ -96,7 +96,7 @@ public class HttpTest extends TestCase {
         var logger = new SystemLogger();
 
         var anyHost = new String[]{"*.httpbin.org", "httpbin.org"};
-        var hostEnv = new HostEnv(new Kernel(), Map.of(), anyHost, logger);
+        var hostEnv = new HostEnv(new Kernel(), Map.of(), anyHost, HttpConfig.defaultConfig(), logger);
 
         byte[] response = hostEnv.http().request(
                 "GET",
@@ -121,7 +121,7 @@ public class HttpTest extends TestCase {
         var logger = new SystemLogger();
 
         var anyHost = new String[]{"*"};
-        var hostEnv = new HostEnv(new Kernel(), Map.of(), anyHost, logger);
+        var hostEnv = new HostEnv(new Kernel(), Map.of(), anyHost, HttpConfig.defaultConfig(), logger);
 
         byte[] response = hostEnv.http().request(
                 "GET",

@@ -38,21 +38,24 @@ class Linker {
         String[] allowedHosts;
         WasiOptions wasiOptions;
         CachedAotMachineFactory aotMachineFactory;
+        HttpConfig httpConfig;
         if (manifest.options == null) {
             config = Map.of();
             allowedHosts = new String[0];
             wasiOptions = null;
             aotMachineFactory = null;
+            httpConfig = HttpConfig.defaultConfig();
         } else {
             dg.setOptions(manifest.options);
             config = manifest.options.config;
             allowedHosts = manifest.options.allowedHosts;
             wasiOptions = manifest.options.wasiOptions;
             aotMachineFactory = manifest.options.aot? new CachedAotMachineFactory() : null;
+            httpConfig = manifest.options.httpConfig == null? HttpConfig.defaultConfig() : manifest.options.httpConfig;
         }
 
         // Register the HostEnv exports.
-        var hostEnv = new HostEnv(new Kernel(aotMachineFactory), config, allowedHosts, logger);
+        var hostEnv = new HostEnv(new Kernel(aotMachineFactory), config, allowedHosts, httpConfig, logger);
         dg.registerFunctions(hostEnv.toHostFunctions());
 
         // Register the WASI host functions.

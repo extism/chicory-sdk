@@ -18,6 +18,7 @@ public class Manifest {
         Map<String, String> config;
         WasiOptions wasiOptions;
         String[] allowedHosts;
+        HttpConfig httpConfig;
 
         public Options withAoT() {
             this.aot = true;
@@ -42,6 +43,11 @@ public class Manifest {
                 }
             }
             this.allowedHosts = allowedHosts;
+            return this;
+        }
+
+        public Options withHttpConfig(HttpConfig httpConfig) {
+            this.httpConfig = httpConfig;
             return this;
         }
 

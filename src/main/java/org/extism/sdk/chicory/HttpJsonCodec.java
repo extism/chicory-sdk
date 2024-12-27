@@ -1,16 +1,16 @@
 package org.extism.sdk.chicory;
 
+import java.net.URI;
+import java.util.List;
 import java.util.Map;
 
 public interface HttpJsonCodec {
-    interface Request {
+    interface RequestMetadata {
         String method();
-        String uri();
+        URI uri();
         Map<String, String> headers();
-        byte[] body();
     }
 
-    Request decode(byte[] data);
-
-
+    RequestMetadata decodeMetadata(byte[] data);
+    byte[] encodeHeaders(Map<String, List<String>> headers);
 }
