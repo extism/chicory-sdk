@@ -73,7 +73,7 @@ public class HttpTest extends TestCase {
         byte[] response2 = hostEnv.http().request(
                 "POST",
                 URI.create("http://httpbin.org/post"),
-                Map.of(),
+                Map.of("Content-Type", "text/plain"),
                 "hello".getBytes(StandardCharsets.UTF_8));
 
         JsonObject responseObject2 = Json.createReader(new ByteArrayInputStream(response2)).readObject();

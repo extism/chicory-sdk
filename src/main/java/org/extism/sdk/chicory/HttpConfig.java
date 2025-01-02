@@ -6,7 +6,7 @@ public class HttpConfig {
     }
 
     public static HttpConfig androidConfig() {
-        return new HttpConfig().withClientAdapter(new OkHttpClientAdapter()).withJsonCodec(new JakartaJsonCodec());
+        return new HttpConfig().withClientAdapter(new HttpUrlConnectionClientAdapter()).withJsonCodec(new JakartaJsonCodec());
     }
 
     HttpJsonCodec httpJsonCodec;
