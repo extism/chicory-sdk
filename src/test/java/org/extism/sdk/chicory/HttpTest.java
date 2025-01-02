@@ -15,27 +15,27 @@ public class HttpTest extends TestCase {
 
     public void testNoAllowedHosts() {
         noAllowedHosts(HttpConfig.defaultConfig());
-        noAllowedHosts(HttpConfig.androidConfig());
+        noAllowedHosts(HttpConfig.urlConnectionConfig());
     }
 
     public void testAllowSingleHost() {
         allowSingleHost(HttpConfig.defaultConfig());
-        allowSingleHost(HttpConfig.androidConfig());
+        allowSingleHost(HttpConfig.urlConnectionConfig());
     }
 
     public void testAllowHostPattern() {
         allowHostPattern(HttpConfig.defaultConfig());
-        allowHostPattern(HttpConfig.androidConfig());
+        allowHostPattern(HttpConfig.urlConnectionConfig());
     }
 
     public void testAllowMultiHostPattern() {
         allowMultiHostPattern(HttpConfig.defaultConfig());
-        allowMultiHostPattern(HttpConfig.androidConfig());
+        allowMultiHostPattern(HttpConfig.urlConnectionConfig());
     }
 
     public void testAllowAnyHost() {
         allowAnyHost(HttpConfig.defaultConfig());
-        allowAnyHost(HttpConfig.androidConfig());
+        allowAnyHost(HttpConfig.urlConnectionConfig());
     }
 
     public void noAllowedHosts(HttpConfig httpConfig) {

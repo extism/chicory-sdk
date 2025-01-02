@@ -1,11 +1,19 @@
 package org.extism.sdk.chicory;
 
 public class HttpConfig {
+    /**
+     * Use {@link JdkHttpClientAdapter} for the HTTP client adapter.
+     * Recommended on recent Java versions.
+     */
     public static HttpConfig defaultConfig() {
         return new HttpConfig().withClientAdapter(new JdkHttpClientAdapter()).withJsonCodec(new JakartaJsonCodec());
     }
 
-    public static HttpConfig androidConfig() {
+    /**
+     * Use {@link HttpUrlConnectionClientAdapter} for the HTTP client adapter.
+     * Recommended for Android.
+     */
+    public static HttpConfig urlConnectionConfig() {
         return new HttpConfig().withClientAdapter(new HttpUrlConnectionClientAdapter()).withJsonCodec(new JakartaJsonCodec());
     }
 
