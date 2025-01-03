@@ -4,17 +4,10 @@ import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.types.ValueType;
-import jakarta.json.Json;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,14 +22,14 @@ public class HostEnv {
     private final Config config;
     private final Http http;
 
-    public HostEnv(Kernel kernel, Map<String, String> config, String[] allowedHosts, Logger logger) {
+    public HostEnv(Kernel kernel, Map<String, String> config, String[] allowedHosts, HttpConfig httpConfig, Logger logger) {
         this.kernel = kernel;
         this.memory = new Memory();
         this.logger = logger;
         this.config = new Config(config);
         this.var = new Var();
         this.log = new Log();
-        this.http = new Http(allowedHosts);
+        this.http = new Http(allowedHosts, httpConfig);
     }
 
     public Log log() {
@@ -262,10 +255,10 @@ public class HostEnv {
 
     public class Http {
         private final HostPattern[] hostPatterns;
-        HttpClient httpClient;
-        HttpResponse<byte[]> lastResponse;
+        HttpJsonCodec jsonCodec;
+        HttpClientAdapter clientAdapter;
 
-        public Http(String[] allowedHosts) {
+        public Http(String[] allowedHosts, HttpConfig httpConfig) {
             if (allowedHosts == null) {
                 allowedHosts = new String[0];
             }
@@ -273,13 +266,8 @@ public class HostEnv {
             for (int i = 0; i < allowedHosts.length; i++) {
                 this.hostPatterns[i] = new HostPattern(allowedHosts[i]);
             }
-        }
-
-        public HttpClient httpClient() {
-            if (httpClient == null) {
-                httpClient = HttpClient.newHttpClient();
-            }
-            return httpClient;
+            this.jsonCodec = httpConfig.httpJsonCodec;
+            this.clientAdapter = httpConfig.httpClientAdapter;
         }
 
         long[] request(Instance instance, long... args) {
@@ -299,19 +287,14 @@ public class HostEnv {
                 kernel.free.apply(bodyOffset);
             }
 
-            var request = Json.createReader(new ByteArrayInputStream(requestJson))
-                    .readObject();
+            var requestMetadata = jsonCodec.decodeMetadata(requestJson);
 
-            var method = request.getJsonString("method").getString();
-            var uri = URI.create(request.getJsonString("url").getString());
-            var headers = request.getJsonObject("headers");
+            byte[] body = request(
+                    requestMetadata.method(),
+                    requestMetadata.uri(),
+                    requestMetadata.headers(),
+                    requestBody);
 
-            Map<String, String> headersMap = new HashMap<>();
-            for (var key : headers.keySet()) {
-                headersMap.put(key, headers.getString(key));
-            }
-
-            byte[] body = request(method, uri, headersMap, requestBody);
             if (body.length == 0) {
                 result[0] = 0;
             } else {
@@ -322,33 +305,12 @@ public class HostEnv {
         }
 
         byte[] request(String method, URI uri, Map<String, String> headers, byte[] requestBody) {
-            HttpRequest.BodyPublisher bodyPublisher;
-            if (requestBody.length == 0) {
-                bodyPublisher = HttpRequest.BodyPublishers.noBody();
-            } else {
-                bodyPublisher = HttpRequest.BodyPublishers.ofByteArray(requestBody);
-            }
-
             var host = uri.getHost();
             if (Arrays.stream(hostPatterns).noneMatch(p -> p.matches(host))) {
                 throw new ExtismException(String.format("HTTP request to '%s' is not allowed", host));
             }
 
-            var reqBuilder = HttpRequest.newBuilder().uri(uri);
-            for (var key : headers.keySet()) {
-                reqBuilder.header(key, headers.get(key));
-            }
-
-            var req = reqBuilder.method(method, bodyPublisher).build();
-
-            try {
-                this.lastResponse =
-                        httpClient().send(req, HttpResponse.BodyHandlers.ofByteArray());
-                return lastResponse.body();
-            } catch (IOException | InterruptedException e) {
-                // FIXME gracefully handle the interruption
-                throw new ExtismException(e);
-            }
+            return clientAdapter.request(method, uri, headers, requestBody);
         }
 
         long[] statusCode(Instance instance, long... args) {
@@ -356,24 +318,16 @@ public class HostEnv {
         }
 
         int statusCode() {
-            return lastResponse == null ? 0 : lastResponse.statusCode();
+            return clientAdapter.statusCode();
         }
 
         long[] headers(Instance instance, long[] longs) {
             var result = new long[1];
-            if (lastResponse == null) {
+            var headers = clientAdapter.headers();
+            if (headers == null) {
                 return result;
             }
-
-            // FIXME duplicated headers are effectively overwriting duplicate values!
-            var objBuilder = Json.createObjectBuilder();
-            for (var entry : lastResponse.headers().map().entrySet()) {
-                for (var v : entry.getValue()) {
-                    objBuilder.add(entry.getKey(), v);
-                }
-            }
-
-            var bytes = objBuilder.build().toString().getBytes(StandardCharsets.UTF_8);
+            var bytes = jsonCodec.encodeHeaders(headers);
             result[0] = memory().writeBytes(bytes);
             return result;
         }
