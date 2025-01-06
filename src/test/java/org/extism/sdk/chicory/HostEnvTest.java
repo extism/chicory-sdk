@@ -11,7 +11,7 @@ public class HostEnvTest extends TestCase {
         var logger = new SystemLogger();
 
         var config = Map.of("key", "value");
-        var hostEnv = new HostEnv(new Kernel(), config, new String[0], new HttpConfig(), logger);
+        var hostEnv = new HostEnv(new Kernel(), config, new String[0], HttpConfig.defaultConfig(), logger);
 
         assertEquals(hostEnv.config().get("key"), "value");
 
