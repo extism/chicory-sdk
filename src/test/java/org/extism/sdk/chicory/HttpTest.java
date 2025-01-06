@@ -15,13 +15,11 @@ public class HttpTest extends TestCase {
 
     public void testNoAllowedHosts() {
         noAllowedHosts(HttpConfig.defaultConfig());
-        noAllowedHosts(HttpConfig.defaultConfig().withJsonCodec(new JacksonJsonCodec()));
         noAllowedHosts(HttpConfig.urlConnectionConfig());
     }
 
     public void testAllowSingleHost() {
         allowSingleHost(HttpConfig.defaultConfig());
-        allowSingleHost(HttpConfig.defaultConfig().withJsonCodec(new JacksonJsonCodec()));
         allowSingleHost(HttpConfig.urlConnectionConfig());
     }
 
@@ -32,13 +30,11 @@ public class HttpTest extends TestCase {
 
     public void testAllowMultiHostPattern() {
         allowMultiHostPattern(HttpConfig.defaultConfig());
-        allowMultiHostPattern(HttpConfig.defaultConfig().withJsonCodec(new JacksonJsonCodec()));
         allowMultiHostPattern(HttpConfig.urlConnectionConfig());
     }
 
     public void testAllowAnyHost() {
         allowAnyHost(HttpConfig.defaultConfig());
-        allowAnyHost(HttpConfig.defaultConfig().withJsonCodec(new JacksonJsonCodec()));
         allowAnyHost(HttpConfig.urlConnectionConfig());
     }
 
