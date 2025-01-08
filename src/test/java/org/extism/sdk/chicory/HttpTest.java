@@ -13,6 +13,25 @@ import java.util.Map;
 
 public class HttpTest extends TestCase {
 
+    public void testInvalidHost() {
+        var httpConfig = HttpConfig.defaultConfig();
+        var logger = new SystemLogger();
+
+        var anyHost = new String[]{"*.httpbin.org"};
+        var hostEnv = new HostEnv(new Kernel(), Map.of(), anyHost, httpConfig, logger);
+
+        try {
+            byte[] response = hostEnv.http().request(
+                    "GET",
+                    URI.create("httpbin.org/headers"),
+                    Map.of("X-Custom-Header", "hello"),
+                    new byte[0]);
+            fail("should throw an exception");
+        } catch (ExtismHttpException e) {
+            assertEquals("HTTP request host is invalid for URI: httpbin.org/headers", e.getMessage());
+        }
+    }
+
     public void testNoAllowedHosts() {
         noAllowedHosts(HttpConfig.defaultConfig());
         noAllowedHosts(HttpConfig.urlConnectionConfig());

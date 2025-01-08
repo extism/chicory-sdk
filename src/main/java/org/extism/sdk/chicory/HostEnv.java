@@ -306,8 +306,11 @@ public class HostEnv {
 
         byte[] request(String method, URI uri, Map<String, String> headers, byte[] requestBody) {
             var host = uri.getHost();
+            if (host == null || host.isBlank()) {
+                throw new ExtismHttpException("HTTP request host is invalid for URI: " + uri);
+            }
             if (Arrays.stream(hostPatterns).noneMatch(p -> p.matches(host))) {
-                throw new ExtismException(String.format("HTTP request to '%s' is not allowed", host));
+                throw new ExtismHttpException(String.format("HTTP request to '%s' is not allowed", host));
             }
 
             return clientAdapter.request(method, uri, headers, requestBody);
