@@ -113,7 +113,22 @@ public class HostEnv {
     }
 
     public class Log {
-        private Log() {
+
+        private LogLevel logLevel = LogLevel.INFO;
+        private Log() {}
+
+        public void setLogLevel(LogLevel level) {
+            // We assume the Chicory logger is a j.u.l.Logger.
+            // Otherwise, the call will not have effect.
+            this.logLevel = level;
+            var logger = java.util.logging.Logger.getLogger("chicory");
+            if (logger != null) {
+                logger.setLevel(level.toJavaLogLevel());
+            }
+        }
+
+        public LogLevel getLogLevel() {
+            return logLevel;
         }
 
         public void log(LogLevel level, String message) {
@@ -151,13 +166,18 @@ public class HostEnv {
             return new long[0];
         }
 
+        private long[] getLogLevel(Instance instance, long[] longs) {
+            return new long[]{logLevel.ordinal()};
+        }
+
         HostFunction[] toHostFunctions() {
             return new HostFunction[]{
                     new HostFunction(Kernel.IMPORT_MODULE_NAME, "log_trace", List.of(ValueType.I64), List.of(), this::logTrace),
                     new HostFunction(Kernel.IMPORT_MODULE_NAME, "log_debug", List.of(ValueType.I64), List.of(), this::logDebug),
                     new HostFunction(Kernel.IMPORT_MODULE_NAME, "log_info", List.of(ValueType.I64), List.of(), this::logInfo),
                     new HostFunction(Kernel.IMPORT_MODULE_NAME, "log_warn", List.of(ValueType.I64), List.of(), this::logWarn),
-                    new HostFunction(Kernel.IMPORT_MODULE_NAME, "log_error", List.of(ValueType.I64), List.of(), this::logError)};
+                    new HostFunction(Kernel.IMPORT_MODULE_NAME, "log_error", List.of(ValueType.I64), List.of(), this::logError),
+                    new HostFunction(Kernel.IMPORT_MODULE_NAME, "get_log_level", List.of(), List.of(ValueType.I32), this::getLogLevel)};
         }
     }
 
