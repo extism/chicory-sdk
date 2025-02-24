@@ -13,15 +13,19 @@ public class Manifest {
     }
 
     public static class Options {
-        boolean aot;
+        boolean aot = false;
         EnumSet<Validation> validationFlags = EnumSet.noneOf(Validation.class);
-        Map<String, String> config;
-        WasiOptions wasiOptions;
-        String[] allowedHosts;
-        HttpConfig httpConfig;
+        Map<String, String> config = Map.of();
+        WasiOptions wasiOptions = WasiOptions.builder().build();
+        String[] allowedHosts = new String[0];
+        HttpConfig httpConfig = HttpConfig.defaultConfig();
 
         public Options withAoT() {
-            this.aot = true;
+            return withAoT(true);
+        }
+
+        public Options withAoT(boolean enabled) {
+            this.aot = enabled;
             return this;
         }
 
@@ -65,7 +69,7 @@ public class Manifest {
 
     public static class Builder {
         final ManifestWasm[] wasms;
-        private Options options;
+        private Options options = new Manifest.Options();
         private String name;
 
         private Builder(ManifestWasm[] manifestWasms) {
