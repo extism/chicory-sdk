@@ -15,7 +15,7 @@ public class Manifest {
     public static class Options {
         boolean aot = false;
         EnumSet<Validation> validationFlags = EnumSet.noneOf(Validation.class);
-        ConfigProvider config = ConfigProvider.Empty();
+        ConfigProvider config = ConfigProvider.empty();
         WasiOptions wasiOptions = WasiOptions.builder().build();
         String[] allowedHosts = new String[0];
         HttpConfig httpConfig = HttpConfig.defaultConfig();

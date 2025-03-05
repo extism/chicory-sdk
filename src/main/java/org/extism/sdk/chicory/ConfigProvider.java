@@ -3,7 +3,7 @@ package org.extism.sdk.chicory;
 import java.util.Map;
 
 public interface ConfigProvider {
-    static ConfigProvider Empty() {
+    static ConfigProvider empty() {
         return key -> null;
     }
 
