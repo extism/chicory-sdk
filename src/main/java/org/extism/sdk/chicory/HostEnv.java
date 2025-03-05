@@ -22,7 +22,7 @@ public class HostEnv {
     private final Config config;
     private final Http http;
 
-    public HostEnv(Kernel kernel, Map<String, String> config, String[] allowedHosts, HttpConfig httpConfig, Logger logger) {
+    public HostEnv(Kernel kernel, ConfigProvider config, String[] allowedHosts, HttpConfig httpConfig, Logger logger) {
         this.kernel = kernel;
         this.memory = new Memory();
         this.logger = logger;
@@ -240,9 +240,9 @@ public class HostEnv {
 
     public class Config {
 
-        private final Map<String, String> config;
+        private final ConfigProvider config;
 
-        private Config(Map<String, String> config) {
+        private Config(ConfigProvider config) {
             this.config = config;
         }
 

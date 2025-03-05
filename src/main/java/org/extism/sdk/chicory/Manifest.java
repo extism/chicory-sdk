@@ -15,7 +15,7 @@ public class Manifest {
     public static class Options {
         boolean aot = false;
         EnumSet<Validation> validationFlags = EnumSet.noneOf(Validation.class);
-        Map<String, String> config = Map.of();
+        ConfigProvider config = ConfigProvider.Empty();
         WasiOptions wasiOptions = WasiOptions.builder().build();
         String[] allowedHosts = new String[0];
         HttpConfig httpConfig = HttpConfig.defaultConfig();
@@ -30,9 +30,14 @@ public class Manifest {
         }
 
         public Options withConfig(Map<String, String> config) {
+            return withConfigProvider(ConfigProvider.ofMap(config));
+        }
+
+        public Options withConfigProvider(ConfigProvider config) {
             this.config = config;
             return this;
         }
+
 
         public Options withValidation(Validation... vs) {
             this.validationFlags.addAll(List.of(vs));
