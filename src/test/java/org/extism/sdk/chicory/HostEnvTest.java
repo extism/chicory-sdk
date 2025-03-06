@@ -4,6 +4,7 @@ import com.dylibso.chicory.log.SystemLogger;
 import junit.framework.TestCase;
 
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
 
 public class HostEnvTest extends TestCase {
@@ -11,7 +12,7 @@ public class HostEnvTest extends TestCase {
         var logger = new SystemLogger();
 
         var config = Map.of("key", "value");
-        var hostEnv = new HostEnv(new Kernel(), config, new String[0], HttpConfig.defaultConfig(), logger);
+        var hostEnv = new HostEnv(new Kernel(), ConfigProvider.ofMap(config), new String[0], HttpConfig.defaultConfig(), logger);
 
         assertEquals(hostEnv.config().get("key"), "value");
 

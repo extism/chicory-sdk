@@ -34,7 +34,7 @@ class Linker {
     Plugin link() {
         var dg = new DependencyGraph(logger);
 
-        Map<String, String> config;
+        ConfigProvider config;
         String[] allowedHosts;
         WasiOptions wasiOptions;
         CachedAotMachineFactory aotMachineFactory;
