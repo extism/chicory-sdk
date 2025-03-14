@@ -3,6 +3,12 @@ package org.extism.sdk.chicory;
 import java.util.Objects;
 
 public class HttpConfig {
+    public static HttpConfig empty() {
+        return HttpConfig.builder()
+                .withClientAdapter(new UnconfiguredHttpClientAdapter())
+                .withJsonCodec(new UnconfiguredJsonCodec())
+                .build();
+    }
     /**
      * Use {@link JdkHttpClientAdapter} for the HTTP client adapter.
      * Recommended on recent Java versions.
