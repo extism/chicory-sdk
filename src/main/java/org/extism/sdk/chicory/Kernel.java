@@ -72,6 +72,7 @@ public class Kernel {
     }
 
     public void setInput(byte[] input) {
+        reset.apply();
         var ptr = alloc.apply(input.length)[0];
         instanceMemory.write((int) ptr, input);
         inputSet.apply(ptr, input.length);
