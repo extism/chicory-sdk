@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 public class HostEnv {
 
@@ -275,8 +276,8 @@ public class HostEnv {
 
     public class Http {
         private final HostPattern[] hostPatterns;
-        HttpJsonCodec jsonCodec;
-        HttpClientAdapter clientAdapter;
+        Lazy<HttpJsonCodec> jsonCodec;
+        Lazy<HttpClientAdapter> clientAdapter;
 
         public Http(String[] allowedHosts, HttpConfig httpConfig) {
             if (allowedHosts == null) {
@@ -286,8 +287,16 @@ public class HostEnv {
             for (int i = 0; i < allowedHosts.length; i++) {
                 this.hostPatterns[i] = new HostPattern(allowedHosts[i]);
             }
-            this.jsonCodec = httpConfig.httpJsonCodec;
-            this.clientAdapter = httpConfig.httpClientAdapter;
+            this.jsonCodec = new Lazy<>(httpConfig.httpJsonCodec);
+            this.clientAdapter = new Lazy<>(httpConfig.httpClientAdapter);
+        }
+
+        public HttpJsonCodec jsonCodec() {
+            return jsonCodec.get();
+        }
+
+        public HttpClientAdapter clientAdapter() {
+            return clientAdapter.get();
         }
 
         long[] request(Instance instance, long... args) {
@@ -307,7 +316,7 @@ public class HostEnv {
                 kernel.free.apply(bodyOffset);
             }
 
-            var requestMetadata = jsonCodec.decodeMetadata(requestJson);
+            var requestMetadata = jsonCodec().decodeMetadata(requestJson);
 
             byte[] body = request(
                     requestMetadata.method(),
@@ -333,7 +342,7 @@ public class HostEnv {
                 throw new ExtismHttpException(String.format("HTTP request to '%s' is not allowed", host));
             }
 
-            return clientAdapter.request(method, uri, headers, requestBody);
+            return clientAdapter().request(method, uri, headers, requestBody);
         }
 
         long[] statusCode(Instance instance, long... args) {
@@ -341,16 +350,16 @@ public class HostEnv {
         }
 
         int statusCode() {
-            return clientAdapter.statusCode();
+            return clientAdapter().statusCode();
         }
 
         long[] headers(Instance instance, long[] longs) {
             var result = new long[1];
-            var headers = clientAdapter.headers();
+            var headers = clientAdapter().headers();
             if (headers == null) {
                 return result;
             }
-            var bytes = jsonCodec.encodeHeaders(headers);
+            var bytes = jsonCodec().encodeHeaders(Map.of());
             result[0] = memory().writeBytes(bytes);
             return result;
         }
@@ -381,7 +390,7 @@ public class HostEnv {
         }
     }
 
-    private static class HostPattern {
+    private static final class HostPattern {
         private final String pattern;
         private final boolean exact;
 
@@ -407,6 +416,27 @@ public class HostEnv {
             } else {
                 return host.endsWith(pattern);
             }
+        }
+    }
+
+    private static final class Lazy<T> {
+        final Supplier<T> supplier;
+        T t;
+        public Lazy(Supplier<T> supplier) {
+            this.supplier = supplier;
+        }
+        public T get() {
+            if (t == null) {
+                try {
+                    t = supplier.get();
+                } catch (NoClassDefFoundError error) {
+                    throw new ConfigurationException(
+                            "Http has not been configured properly. " +
+                                    "Verify you have added a dependency to the JSON deserializer (default: Jackson Databind) " +
+                                    "and you have have configure the HTTP client properly (default: java.net.http.HttpClient)", error);
+                }
+            }
+            return t;
         }
     }
 

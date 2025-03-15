@@ -9,4 +9,9 @@ public class ExtismException extends RuntimeException {
     public ExtismException(Throwable cause) {
         super(cause);
     }
+
+    public ExtismException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
 }

@@ -1,22 +1,17 @@
 package org.extism.sdk.chicory;
 
 import java.util.Objects;
+import java.util.function.Supplier;
 
 public class HttpConfig {
-    public static HttpConfig empty() {
-        return HttpConfig.builder()
-                .withClientAdapter(new DummyHttpClientAdapter())
-                .withJsonCodec(new DummyJsonCodec())
-                .build();
-    }
     /**
      * Use {@link JdkHttpClientAdapter} for the HTTP client adapter.
      * Recommended on recent Java versions.
      */
     public static HttpConfig defaultConfig() {
         return HttpConfig.builder()
-                .withClientAdapter(new JdkHttpClientAdapter())
-                .withJsonCodec(new JacksonJsonCodec()).build();
+                .withClientAdapter(JdkHttpClientAdapter::new)
+                .withJsonCodec(JacksonJsonCodec::new).build();
     }
 
     /**
@@ -25,8 +20,8 @@ public class HttpConfig {
      */
     public static HttpConfig urlConnectionConfig() {
         return HttpConfig.builder()
-                .withClientAdapter(new HttpUrlConnectionClientAdapter())
-                .withJsonCodec(new JakartaJsonCodec()).build();
+                .withClientAdapter(HttpUrlConnectionClientAdapter::new)
+                .withJsonCodec(JakartaJsonCodec::new).build();
     }
 
     public static Builder builder() {
@@ -34,18 +29,18 @@ public class HttpConfig {
     }
 
     public static class Builder {
-        HttpJsonCodec httpJsonCodec;
-        HttpClientAdapter httpClientAdapter;
+        Supplier<HttpJsonCodec> httpJsonCodec;
+        Supplier<HttpClientAdapter> httpClientAdapter;
 
         private Builder() {}
 
-        public Builder withJsonCodec(HttpJsonCodec httpJsonCodec) {
-            this.httpJsonCodec = httpJsonCodec;
+        public Builder withJsonCodec(Supplier<HttpJsonCodec> httpJsonCodecFactory) {
+            this.httpJsonCodec = httpJsonCodecFactory;
             return this;
         }
 
-        public Builder withClientAdapter(HttpClientAdapter httpClientAdapter) {
-            this.httpClientAdapter = httpClientAdapter;
+        public Builder withClientAdapter(Supplier<HttpClientAdapter> httpClientAdapterFactory) {
+            this.httpClientAdapter = httpClientAdapterFactory;
             return this;
         }
 
@@ -57,10 +52,10 @@ public class HttpConfig {
     }
 
 
-    HttpJsonCodec httpJsonCodec;
-    HttpClientAdapter httpClientAdapter;
+    Supplier<HttpJsonCodec> httpJsonCodec;
+    Supplier<HttpClientAdapter> httpClientAdapter;
 
-    public HttpConfig(HttpJsonCodec httpJsonCodec, HttpClientAdapter httpClientAdapter) {
+    public HttpConfig(Supplier<HttpJsonCodec> httpJsonCodec, Supplier<HttpClientAdapter> httpClientAdapter) {
         this.httpJsonCodec = httpJsonCodec;
         this.httpClientAdapter = httpClientAdapter;
     }

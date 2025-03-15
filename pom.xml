@@ -219,11 +219,6 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven-surefire-plugin.version}</version>
-        <configuration>
-          <systemPropertyVariables>
-            <jna.library.path>../target/release</jna.library.path>
-          </systemPropertyVariables>
-        </configuration>
       </plugin>
     </plugins>
   </build>

@@ -18,7 +18,7 @@ public class Manifest {
         ConfigProvider config = ConfigProvider.empty();
         WasiOptions wasiOptions = WasiOptions.builder().build();
         String[] allowedHosts = new String[0];
-        HttpConfig httpConfig = HttpConfig.empty();
+        HttpConfig httpConfig = HttpConfig.defaultConfig();
 
         public Options withAoT() {
             return withAoT(true);

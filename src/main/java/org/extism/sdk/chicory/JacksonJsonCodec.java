@@ -1,6 +1,5 @@
 package org.extism.sdk.chicory;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -63,7 +62,7 @@ public class JacksonJsonCodec implements HttpJsonCodec {
         }
         try {
             return objectMapper.writeValueAsBytes(objectNode);
-        } catch (JsonProcessingException e) {
+        } catch (IOException e) {
             throw new ExtismException(e);
         }
     }
