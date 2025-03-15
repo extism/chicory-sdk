@@ -4,7 +4,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
-public class UnconfiguredHttpClientAdapter implements HttpClientAdapter{
+final class DummyHttpClientAdapter implements HttpClientAdapter{
     @Override
     public byte[] request(String method, URI url, Map<String, String> headers, byte[] requestBody) {
         throw new ConfigurationException(

@@ -3,7 +3,7 @@ package org.extism.sdk.chicory;
 import java.util.List;
 import java.util.Map;
 
-public final class UnconfiguredJsonCodec implements HttpJsonCodec {
+final class DummyJsonCodec implements HttpJsonCodec {
 
     @Override
     public RequestMetadata decodeMetadata(byte[] data) {

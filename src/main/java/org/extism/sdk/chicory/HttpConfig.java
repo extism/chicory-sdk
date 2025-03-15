@@ -5,8 +5,8 @@ import java.util.Objects;
 public class HttpConfig {
     public static HttpConfig empty() {
         return HttpConfig.builder()
-                .withClientAdapter(new UnconfiguredHttpClientAdapter())
-                .withJsonCodec(new UnconfiguredJsonCodec())
+                .withClientAdapter(new DummyHttpClientAdapter())
+                .withJsonCodec(new DummyJsonCodec())
                 .build();
     }
     /**
