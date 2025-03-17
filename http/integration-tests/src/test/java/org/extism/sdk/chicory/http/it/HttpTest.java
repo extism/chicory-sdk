@@ -1,9 +1,20 @@
-package org.extism.sdk.chicory.core;
+package org.extism.sdk.chicory.http.it;
 
 import com.dylibso.chicory.log.SystemLogger;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
+import junit.framework.Assert;
 import junit.framework.TestCase;
+import org.extism.sdk.chicory.core.ConfigProvider;
+import org.extism.sdk.chicory.core.ExtismException;
+import org.extism.sdk.chicory.core.HostEnv;
+import org.extism.sdk.chicory.core.HttpConfig;
+import org.extism.sdk.chicory.core.Kernel;
+import org.extism.sdk.chicory.http.ExtismHttpException;
+import org.extism.sdk.chicory.http.HttpUrlConnectionClientAdapter;
+import org.extism.sdk.chicory.http.JdkHttpClientAdapter;
+import org.extism.sdk.chicory.http.jackson.JacksonJsonCodec;
+import org.extism.sdk.chicory.http.jakarta.JakartaJsonCodec;
 
 import java.io.ByteArrayInputStream;
 import java.net.URI;
@@ -13,8 +24,25 @@ import java.util.Map;
 
 public class HttpTest extends TestCase {
 
+    public static HttpConfig defaultConfig() {
+        return HttpConfig.builder()
+                .withClientAdapter(JdkHttpClientAdapter::new)
+                .withJsonCodec(JacksonJsonCodec::new).build();
+    }
+
+    /**
+     * Use {@link HttpUrlConnectionClientAdapter} for the HTTP client adapter.
+     * Recommended for Android.
+     */
+    public static HttpConfig urlConnectionConfig() {
+        return HttpConfig.builder()
+                .withClientAdapter(HttpUrlConnectionClientAdapter::new)
+                .withJsonCodec(JakartaJsonCodec::new).build();
+    }
+
+
     public void testInvalidHost() {
-        var httpConfig = HttpConfig.defaultConfig();
+        var httpConfig = defaultConfig();
         var logger = new SystemLogger();
 
         var anyHost = new String[]{"*.httpbin.org"};
@@ -26,35 +54,35 @@ public class HttpTest extends TestCase {
                     URI.create("httpbin.org/headers"),
                     Map.of("X-Custom-Header", "hello"),
                     new byte[0]);
-            fail("should throw an exception");
+            Assert.fail("should throw an exception");
         } catch (ExtismHttpException e) {
             assertEquals("HTTP request host is invalid for URI: httpbin.org/headers", e.getMessage());
         }
     }
 
     public void testNoAllowedHosts() {
-        noAllowedHosts(HttpConfig.defaultConfig());
-        noAllowedHosts(HttpConfig.urlConnectionConfig());
+        noAllowedHosts(defaultConfig());
+        noAllowedHosts(urlConnectionConfig());
     }
 
     public void testAllowSingleHost() {
-        allowSingleHost(HttpConfig.defaultConfig());
-        allowSingleHost(HttpConfig.urlConnectionConfig());
+        allowSingleHost(defaultConfig());
+        allowSingleHost(urlConnectionConfig());
     }
 
     public void testAllowHostPattern() {
-        allowHostPattern(HttpConfig.defaultConfig());
-        allowHostPattern(HttpConfig.urlConnectionConfig());
+        allowHostPattern(defaultConfig());
+        allowHostPattern(urlConnectionConfig());
     }
 
     public void testAllowMultiHostPattern() {
-        allowMultiHostPattern(HttpConfig.defaultConfig());
-        allowMultiHostPattern(HttpConfig.urlConnectionConfig());
+        allowMultiHostPattern(defaultConfig());
+        allowMultiHostPattern(urlConnectionConfig());
     }
 
     public void testAllowAnyHost() {
-        allowAnyHost(HttpConfig.defaultConfig());
-        allowAnyHost(HttpConfig.urlConnectionConfig());
+        allowAnyHost(defaultConfig());
+        allowAnyHost(urlConnectionConfig());
     }
 
     public void noAllowedHosts(HttpConfig httpConfig) {
@@ -69,9 +97,9 @@ public class HttpTest extends TestCase {
                     URI.create("http://httpbin.org/headers"),
                     Map.of("X-Custom-Header", "hello"),
                     new byte[0]);
-            fail("Should have thrown an exception");
-        } catch (ExtismException e) {
-            assertEquals("HTTP request to 'httpbin.org' is not allowed", e.getMessage());
+            Assert.fail("Should have thrown an exception");
+        } catch (ExtismHttpException e) {
+            Assert.assertEquals("HTTP request to 'httpbin.org' is not allowed", e.getMessage());
         }
     }
 
@@ -104,9 +132,9 @@ public class HttpTest extends TestCase {
                     URI.create("http://example.com"),
                     Map.of("X-Custom-Header", "hello"),
                     new byte[0]);
-            fail("Should have thrown an exception");
-        } catch (ExtismException e) {
-            assertEquals("HTTP request to 'example.com' is not allowed", e.getMessage());
+            Assert.fail("Should have thrown an exception");
+        } catch (ExtismHttpException e) {
+            Assert.assertEquals("HTTP request to 'example.com' is not allowed", e.getMessage());
         }
     }
 
@@ -131,9 +159,9 @@ public class HttpTest extends TestCase {
                     URI.create("http://httpbin.org/headers"),
                     Map.of("X-Custom-Header", "hello"),
                     new byte[0]);
-            fail("Should have thrown an exception");
-        } catch (ExtismException e) {
-            assertEquals("HTTP request to 'httpbin.org' is not allowed", e.getMessage());
+            Assert.fail("Should have thrown an exception");
+        } catch (ExtismHttpException e) {
+            Assert.assertEquals("HTTP request to 'httpbin.org' is not allowed", e.getMessage());
         }
     }
 
@@ -192,8 +220,8 @@ public class HttpTest extends TestCase {
                 Map.of(),
                 new byte[0]);
 
-        assertEquals(200, hostEnv.http().statusCode());
-        assertTrue(response.length > 0);
+        Assert.assertEquals(200, hostEnv.http().statusCode());
+        Assert.assertTrue(response.length > 0);
     }
 
 
