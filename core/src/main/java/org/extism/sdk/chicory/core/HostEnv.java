@@ -4,6 +4,7 @@ import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.types.ValueType;
+import org.extism.sdk.chicory.http.HttpJsonCodec;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;

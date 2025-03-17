@@ -1,6 +1,7 @@
-package org.extism.sdk.chicory.core;
+package org.extism.sdk.chicory.http.jakarta;
 
 import jakarta.json.Json;
+import org.extism.sdk.chicory.http.HttpJsonCodec;
 
 import java.io.ByteArrayInputStream;
 import java.net.URI;

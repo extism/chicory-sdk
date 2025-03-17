@@ -1,5 +1,7 @@
 package org.extism.sdk.chicory.core;
 
+import org.extism.sdk.chicory.http.HttpJsonCodec;
+
 import java.util.Objects;
 import java.util.function.Supplier;
 

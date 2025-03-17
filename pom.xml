@@ -79,6 +79,7 @@
 
   <modules>
     <module>core</module>
+    <module>http</module>
   </modules>
 
   <profiles>

@@ -1,7 +1,8 @@
-package org.extism.sdk.chicory.core;
+package org.extism.sdk.chicory.http.jackson;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.extism.sdk.chicory.http.HttpJsonCodec;
 
 import java.io.IOException;
 import java.net.URI;

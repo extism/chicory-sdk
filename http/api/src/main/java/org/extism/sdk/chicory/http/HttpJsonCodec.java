@@ -1,4 +1,4 @@
-package org.extism.sdk.chicory.core;
+package org.extism.sdk.chicory.http;
 
 import java.net.URI;
 import java.util.List;
