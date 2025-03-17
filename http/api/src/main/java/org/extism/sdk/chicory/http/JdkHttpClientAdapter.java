@@ -1,4 +1,4 @@
-package org.extism.sdk.chicory.core;
+package org.extism.sdk.chicory.http;
 
 import java.io.IOException;
 import java.net.URI;
@@ -38,7 +38,7 @@ public class JdkHttpClientAdapter implements HttpClientAdapter {
             return lastResponse.body();
         } catch (IOException | InterruptedException e) {
             // FIXME gracefully handle the interruption
-            throw new ExtismException(e);
+            throw new ExtismHttpException(e);
         }
     }
 

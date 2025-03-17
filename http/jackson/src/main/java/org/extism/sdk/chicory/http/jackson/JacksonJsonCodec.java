@@ -2,6 +2,7 @@ package org.extism.sdk.chicory.http.jackson;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.extism.sdk.chicory.http.ExtismJsonException;
 import org.extism.sdk.chicory.http.HttpJsonCodec;
 
 import java.io.IOException;
@@ -21,7 +22,7 @@ public class JacksonJsonCodec implements HttpJsonCodec {
         try {
             request = objectMapper.readTree(data);
         } catch (IOException e) {
-            throw new ExtismException(e);
+            throw new ExtismJsonException(e);
         }
 
         var method = request.get("method").asText();
@@ -64,7 +65,7 @@ public class JacksonJsonCodec implements HttpJsonCodec {
         try {
             return objectMapper.writeValueAsBytes(objectNode);
         } catch (IOException e) {
-            throw new ExtismException(e);
+            throw new ExtismJsonException(e);
         }
     }
 }

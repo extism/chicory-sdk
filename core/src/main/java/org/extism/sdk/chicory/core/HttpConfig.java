@@ -1,6 +1,9 @@
 package org.extism.sdk.chicory.core;
 
+import org.extism.sdk.chicory.http.HttpClientAdapter;
 import org.extism.sdk.chicory.http.HttpJsonCodec;
+import org.extism.sdk.chicory.http.HttpUrlConnectionClientAdapter;
+import org.extism.sdk.chicory.http.JdkHttpClientAdapter;
 
 import java.util.Objects;
 import java.util.function.Supplier;

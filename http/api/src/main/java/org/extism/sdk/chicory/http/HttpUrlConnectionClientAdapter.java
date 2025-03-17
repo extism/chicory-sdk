@@ -1,4 +1,4 @@
-package org.extism.sdk.chicory.core;
+package org.extism.sdk.chicory.http;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,7 +47,7 @@ public class HttpUrlConnectionClientAdapter implements HttpClientAdapter {
             return lastBody;
         } catch (IOException e) {
             // FIXME gracefully handle the interruption
-            throw new ExtismException(e);
+            throw new ExtismHttpException(e);
         } finally {
             if (conn != null) {
                 conn.disconnect();
