@@ -1,6 +1,7 @@
 package org.extism.sdk.chicory.core;
 
 import com.dylibso.chicory.wasi.WasiOptions;
+import org.extism.sdk.chicory.http.HttpConfig;
 
 import java.util.EnumSet;
 import java.util.List;

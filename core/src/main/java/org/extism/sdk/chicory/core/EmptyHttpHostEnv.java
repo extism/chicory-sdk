@@ -1,61 +1,28 @@
 package org.extism.sdk.chicory.core;
 
 import com.dylibso.chicory.runtime.HostFunction;
-import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.wasm.types.ValueType;
 
 import java.net.URI;
-import java.util.List;
 import java.util.Map;
 
-public class EmptyHttpHostEnv implements HttpHostEnv {
-    @Override
-    public long[] request(Instance instance, long... args) {
-        return new long[0];
-    }
-
+class EmptyHttpHostEnv implements HostEnv.Http {
     @Override
     public byte[] request(String method, URI uri, Map<String, String> headers, byte[] requestBody) {
-        return new byte[0];
+        throw new ConfigurationException("Http has not been configured properly. " +
+                "Verify you have added a dependency to the JSON deserializer (default: Jackson Databind) " +
+                "and you have have configure the HTTP client properly (default: java.net.http.HttpClient)");
     }
 
     @Override
     public int statusCode() {
-        return 0;
-    }
-
-    @Override
-    public long[] statusCode(Instance instance, long... args) {
-        return new long[0];
-    }
-
-    @Override
-    public long[] headers(Instance instance, long[] longs) {
-        return new long[0];
+        throw new ConfigurationException("Http has not been configured properly. " +
+                "Verify you have added a dependency to the JSON deserializer (default: Jackson Databind) " +
+                "and you have have configure the HTTP client properly (default: java.net.http.HttpClient)");
     }
 
     @Override
     public HostFunction[] toHostFunctions() {
-        return new HostFunction[]{
-                new HostFunction(
-                        Kernel.IMPORT_MODULE_NAME,
-                        "http_request",
-                        List.of(ValueType.I64, ValueType.I64),
-                        List.of(ValueType.I64),
-                        this::request),
-                new HostFunction(
-                        Kernel.IMPORT_MODULE_NAME,
-                        "http_status_code",
-                        List.of(),
-                        List.of(ValueType.I32),
-                        this::statusCode),
-                new HostFunction(
-                        Kernel.IMPORT_MODULE_NAME,
-                        "http_headers",
-                        List.of(),
-                        List.of(ValueType.I64),
-                        this::headers),
-
-        };
+        return new HostFunction[0];
     }
+
 }

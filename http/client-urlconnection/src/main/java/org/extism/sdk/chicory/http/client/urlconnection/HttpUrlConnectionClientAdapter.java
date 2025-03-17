@@ -1,4 +1,7 @@
-package org.extism.sdk.chicory.http;
+package org.extism.sdk.chicory.http.client.urlconnection;
+
+import org.extism.sdk.chicory.http.ExtismHttpException;
+import org.extism.sdk.chicory.http.HttpClientAdapter;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -59,7 +62,7 @@ public class HttpUrlConnectionClientAdapter implements HttpClientAdapter {
         return lastResponseCode;
     }
 
-    public Map<String, java.util.List<String>> headers() {
+    public Map<String, List<String>> headers() {
         return lastResponseHeaders;
     }
 

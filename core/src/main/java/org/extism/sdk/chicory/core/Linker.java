@@ -5,6 +5,7 @@ import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
+import org.extism.sdk.chicory.http.HttpConfig;
 
 import java.util.Arrays;
 

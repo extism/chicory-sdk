@@ -9,7 +9,7 @@
         <version>999-SNAPSHOT</version>
     </parent>
 
-    <artifactId>http-integration-tests</artifactId>
+    <artifactId>http-json-jakarta</artifactId>
 
     <properties>
         <maven.compiler.source>22</maven.compiler.source>
@@ -17,26 +17,17 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+
     <dependencies>
-        <dependency>
-            <groupId>org.extism.sdk</groupId>
-            <artifactId>chicory-sdk-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
         <dependency>
             <groupId>org.extism.sdk</groupId>
             <artifactId>http-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.extism.sdk</groupId>
-            <artifactId>http-config-generic</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.extism.sdk</groupId>
-            <artifactId>http-config-android</artifactId>
-            <version>${project.version}</version>
+            <groupId>jakarta.json</groupId>
+            <artifactId>jakarta.json-api</artifactId>
+            <version>${jakarta.json-api.version}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.parsson</groupId>
@@ -44,13 +35,6 @@
             <version>${jakarta.json.version}</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>${junit.version}</version>
-            <scope>test</scope>
-        </dependency>
-
     </dependencies>
 
 </project>

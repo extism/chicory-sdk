@@ -1,32 +1,9 @@
-package org.extism.sdk.chicory.core;
-
-import org.extism.sdk.chicory.http.HttpClientAdapter;
-import org.extism.sdk.chicory.http.HttpJsonCodec;
-import org.extism.sdk.chicory.http.JdkHttpClientAdapter;
+package org.extism.sdk.chicory.http;
 
 import java.util.Objects;
 import java.util.function.Supplier;
 
 public class HttpConfig {
-    /**
-     * Use {@link JdkHttpClientAdapter} for the HTTP client adapter.
-     * Recommended on recent Java versions.
-     */
-//    public static HttpConfig defaultConfig() {
-//        return HttpConfig.builder()
-//                .withClientAdapter(JdkHttpClientAdapter::new)
-//                .withJsonCodec(JacksonJsonCodec::new).build();
-//    }
-//
-//    /**
-//     * Use {@link HttpUrlConnectionClientAdapter} for the HTTP client adapter.
-//     * Recommended for Android.
-//     */
-//    public static HttpConfig urlConnectionConfig() {
-//        return HttpConfig.builder()
-//                .withClientAdapter(HttpUrlConnectionClientAdapter::new)
-//                .withJsonCodec(JakartaJsonCodec::new).build();
-//    }
 
     public static Builder builder() {
         return new Builder();
@@ -36,7 +13,8 @@ public class HttpConfig {
         Supplier<HttpJsonCodec> httpJsonCodec;
         Supplier<HttpClientAdapter> httpClientAdapter;
 
-        private Builder() {}
+        private Builder() {
+        }
 
         public Builder withJsonCodec(Supplier<HttpJsonCodec> httpJsonCodecFactory) {
             this.httpJsonCodec = httpJsonCodecFactory;
@@ -62,6 +40,14 @@ public class HttpConfig {
     public HttpConfig(Supplier<HttpJsonCodec> httpJsonCodec, Supplier<HttpClientAdapter> httpClientAdapter) {
         this.httpJsonCodec = httpJsonCodec;
         this.httpClientAdapter = httpClientAdapter;
+    }
+
+    public Supplier<HttpJsonCodec> httpJsonCodec() {
+        return httpJsonCodec;
+    }
+
+    public Supplier<HttpClientAdapter> httpClientAdapter() {
+        return httpClientAdapter;
     }
 
 }

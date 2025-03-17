@@ -6,6 +6,7 @@ import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.types.ValueType;
 import org.extism.sdk.chicory.http.ExtismHttpException;
 import org.extism.sdk.chicory.http.HttpClientAdapter;
+import org.extism.sdk.chicory.http.HttpConfig;
 import org.extism.sdk.chicory.http.HttpJsonCodec;
 
 import java.net.URI;
@@ -14,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public class HttpHostEnvImpl implements HttpHostEnv {
+class HttpHostEnvImpl implements HostEnv.Http {
     private final HostPattern[] hostPatterns;
     private final Kernel kernel;
     private final HostEnv.Memory memory;
@@ -31,8 +32,8 @@ public class HttpHostEnvImpl implements HttpHostEnv {
         for (int i = 0; i < allowedHosts.length; i++) {
             this.hostPatterns[i] = new HostPattern(allowedHosts[i]);
         }
-        this.jsonCodec = new Lazy<>(httpConfig.httpJsonCodec);
-        this.clientAdapter = new Lazy<>(httpConfig.httpClientAdapter);
+        this.jsonCodec = new Lazy<>(httpConfig.httpJsonCodec());
+        this.clientAdapter = new Lazy<>(httpConfig.httpClientAdapter());
     }
 
     public HttpJsonCodec jsonCodec() {

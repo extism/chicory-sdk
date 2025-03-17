@@ -5,27 +5,24 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.extism.sdk</groupId>
-        <artifactId>chicory-sdk</artifactId>
+        <artifactId>http</artifactId>
         <version>999-SNAPSHOT</version>
     </parent>
 
-    <artifactId>http</artifactId>
-    <packaging>pom</packaging>
-    <modules>
-        <module>json-jackson</module>
-        <module>json-jakarta</module>
-        <module>api</module>
-        <module>integration-tests</module>
-        <module>client-javanet</module>
-        <module>client-urlconnection</module>
-        <module>config-generic</module>
-        <module>config-android</module>
-    </modules>
+    <artifactId>http-client-javanet</artifactId>
 
     <properties>
         <maven.compiler.source>22</maven.compiler.source>
         <maven.compiler.target>22</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.extism.sdk</groupId>
+            <artifactId>http-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
 
 </project>

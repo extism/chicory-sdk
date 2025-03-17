@@ -9,7 +9,7 @@
         <version>999-SNAPSHOT</version>
     </parent>
 
-    <artifactId>http-integration-tests</artifactId>
+    <artifactId>http-config-android</artifactId>
 
     <properties>
         <maven.compiler.source>22</maven.compiler.source>
@@ -20,37 +20,19 @@
     <dependencies>
         <dependency>
             <groupId>org.extism.sdk</groupId>
-            <artifactId>chicory-sdk-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.extism.sdk</groupId>
             <artifactId>http-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.extism.sdk</groupId>
-            <artifactId>http-config-generic</artifactId>
+            <artifactId>http-client-urlconnection</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.extism.sdk</groupId>
-            <artifactId>http-config-android</artifactId>
+            <artifactId>http-json-jackson</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.eclipse.parsson</groupId>
-            <artifactId>jakarta.json</artifactId>
-            <version>${jakarta.json.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>${junit.version}</version>
-            <scope>test</scope>
-        </dependency>
-
     </dependencies>
 
 </project>

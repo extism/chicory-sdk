@@ -9,7 +9,7 @@
         <version>999-SNAPSHOT</version>
     </parent>
 
-    <artifactId>http-jackson</artifactId>
+    <artifactId>http-json-jackson</artifactId>
 
     <properties>
         <maven.compiler.source>22</maven.compiler.source>
@@ -27,7 +27,6 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson-core.version}</version>
-            <optional>true</optional>
         </dependency>
     </dependencies>
 

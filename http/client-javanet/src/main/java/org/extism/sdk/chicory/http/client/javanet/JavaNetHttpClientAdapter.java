@@ -1,4 +1,7 @@
-package org.extism.sdk.chicory.http;
+package org.extism.sdk.chicory.http.client.javanet;
+
+import org.extism.sdk.chicory.http.ExtismHttpException;
+import org.extism.sdk.chicory.http.HttpClientAdapter;
 
 import java.io.IOException;
 import java.net.URI;
@@ -7,7 +10,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Map;
 
-public class JdkHttpClientAdapter implements HttpClientAdapter {
+public class JavaNetHttpClientAdapter implements HttpClientAdapter {
     HttpResponse<byte[]> lastResponse;
     HttpClient httpClient;
 

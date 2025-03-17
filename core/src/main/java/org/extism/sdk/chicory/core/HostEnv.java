@@ -4,7 +4,9 @@ import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.types.ValueType;
+import org.extism.sdk.chicory.http.HttpConfig;
 
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -19,7 +21,7 @@ public class HostEnv {
     private final Log log;
     private final Var var;
     private final Config config;
-    private final HttpHostEnv http;
+    private final Http http;
 
     public HostEnv(Kernel kernel, ConfigProvider config, String[] allowedHosts, HttpConfig httpConfig, Logger logger) {
         this.kernel = kernel;
@@ -45,7 +47,7 @@ public class HostEnv {
         return config;
     }
 
-    public HttpHostEnv http() {
+    public Http http() {
         return http;
     }
 
@@ -273,5 +275,17 @@ public class HostEnv {
         }
 
     }
+
+
+    public interface Http {
+
+        byte[] request(String method, URI uri, Map<String, String> headers, byte[] requestBody);
+
+        int statusCode();
+
+        HostFunction[] toHostFunctions();
+
+    }
+
 
 }

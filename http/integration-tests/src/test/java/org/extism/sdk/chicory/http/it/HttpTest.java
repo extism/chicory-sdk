@@ -6,15 +6,12 @@ import jakarta.json.JsonObject;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 import org.extism.sdk.chicory.core.ConfigProvider;
-import org.extism.sdk.chicory.core.ExtismException;
 import org.extism.sdk.chicory.core.HostEnv;
-import org.extism.sdk.chicory.core.HttpConfig;
+import org.extism.sdk.chicory.http.HttpConfig;
 import org.extism.sdk.chicory.core.Kernel;
 import org.extism.sdk.chicory.http.ExtismHttpException;
-import org.extism.sdk.chicory.http.HttpUrlConnectionClientAdapter;
-import org.extism.sdk.chicory.http.JdkHttpClientAdapter;
-import org.extism.sdk.chicory.http.jackson.JacksonJsonCodec;
-import org.extism.sdk.chicory.http.jakarta.JakartaJsonCodec;
+import org.extism.sdk.chicory.http.config.android.AndroidHttpConfig;
+import org.extism.sdk.chicory.http.config.generic.GenericHttpConfig;
 
 import java.io.ByteArrayInputStream;
 import java.net.URI;
@@ -25,19 +22,11 @@ import java.util.Map;
 public class HttpTest extends TestCase {
 
     public static HttpConfig defaultConfig() {
-        return HttpConfig.builder()
-                .withClientAdapter(JdkHttpClientAdapter::new)
-                .withJsonCodec(JacksonJsonCodec::new).build();
+        return GenericHttpConfig.get();
     }
 
-    /**
-     * Use {@link HttpUrlConnectionClientAdapter} for the HTTP client adapter.
-     * Recommended for Android.
-     */
     public static HttpConfig urlConnectionConfig() {
-        return HttpConfig.builder()
-                .withClientAdapter(HttpUrlConnectionClientAdapter::new)
-                .withJsonCodec(JakartaJsonCodec::new).build();
+        return AndroidHttpConfig.get();
     }
 
 

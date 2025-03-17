@@ -9,14 +9,13 @@
         <version>999-SNAPSHOT</version>
     </parent>
 
-    <artifactId>http-jakarta-json</artifactId>
+    <artifactId>http-config-generic</artifactId>
 
     <properties>
         <maven.compiler.source>22</maven.compiler.source>
         <maven.compiler.target>22</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
-
 
     <dependencies>
         <dependency>
@@ -25,15 +24,14 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>jakarta.json</groupId>
-            <artifactId>jakarta.json-api</artifactId>
-            <version>${jakarta.json-api.version}</version>
+            <groupId>org.extism.sdk</groupId>
+            <artifactId>http-client-javanet</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.parsson</groupId>
-            <artifactId>jakarta.json</artifactId>
-            <version>${jakarta.json.version}</version>
-            <scope>test</scope>
+            <groupId>org.extism.sdk</groupId>
+            <artifactId>http-json-jackson</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 
