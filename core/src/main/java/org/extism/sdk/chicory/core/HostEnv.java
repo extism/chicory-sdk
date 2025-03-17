@@ -4,7 +4,10 @@ import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.types.ValueType;
+import org.extism.sdk.chicory.http.ExtismHttpException;
+import org.extism.sdk.chicory.http.HttpClientAdapter;
 import org.extism.sdk.chicory.http.HttpConfig;
+import org.extism.sdk.chicory.http.HttpJsonCodec;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -30,9 +33,7 @@ public class HostEnv {
         this.config = new Config(config);
         this.var = new Var();
         this.log = new Log();
-        this.http = httpConfig == null ?
-                new EmptyHttpHostEnv() :
-                new HttpHostEnvImpl(allowedHosts, httpConfig, kernel, memory);
+        this.http = httpConfig == null ? null : new Http(allowedHosts, httpConfig);
     }
 
     public Log log() {
@@ -48,6 +49,12 @@ public class HostEnv {
     }
 
     public Http http() {
+        if (http == null) {
+            throw new ExtismConfigurationException(
+                    "Http has not been configured properly. " +
+                            "Verify you have added a dependency to the JSON deserializer (default: Jackson Databind) " +
+                            "and you have have configure the HTTP client properly (default: java.net.http.HttpClient)");
+        }
         return http;
     }
 
@@ -57,7 +64,7 @@ public class HostEnv {
                 log.toHostFunctions(),
                 var.toHostFunctions(),
                 config.toHostFunctions(),
-                http.toHostFunctions());
+                http == null ? new HostFunction[0] : http.toHostFunctions());
     }
 
     private HostFunction[] concat(HostFunction[]... hfs) {
@@ -118,7 +125,9 @@ public class HostEnv {
     public class Log {
 
         private LogLevel logLevel = LogLevel.INFO;
-        private Log() {}
+
+        private Log() {
+        }
 
         public void setLogLevel(LogLevel level) {
             // We assume the Chicory logger is a j.u.l.Logger.
@@ -277,15 +286,141 @@ public class HostEnv {
     }
 
 
-    public interface Http {
+    public class Http {
+        private final HostPattern[] hostPatterns;
+        HttpJsonCodec jsonCodec;
+        HttpClientAdapter clientAdapter;
 
-        byte[] request(String method, URI uri, Map<String, String> headers, byte[] requestBody);
+        public Http(String[] allowedHosts, HttpConfig httpConfig) {
+            if (allowedHosts == null) {
+                allowedHosts = new String[0];
+            }
+            this.hostPatterns = new HostPattern[allowedHosts.length];
+            for (int i = 0; i < allowedHosts.length; i++) {
+                this.hostPatterns[i] = new HostPattern(allowedHosts[i]);
+            }
+            this.jsonCodec = httpConfig.httpJsonCodec().get();
+            this.clientAdapter = httpConfig.httpClientAdapter().get();
+        }
 
-        int statusCode();
+        long[] request(Instance instance, long... args) {
+            var result = new long[1];
 
-        HostFunction[] toHostFunctions();
+            var requestOffset = args[0];
+            var bodyOffset = args[1];
 
+            var requestJson = memory().readBytes(requestOffset);
+            kernel.free.apply(requestOffset);
+
+            byte[] requestBody;
+            if (bodyOffset == 0) {
+                requestBody = new byte[0];
+            } else {
+                requestBody = memory().readBytes(bodyOffset);
+                kernel.free.apply(bodyOffset);
+            }
+
+            var requestMetadata = jsonCodec.decodeMetadata(requestJson);
+
+            byte[] body = request(
+                    requestMetadata.method(),
+                    requestMetadata.uri(),
+                    requestMetadata.headers(),
+                    requestBody);
+
+            if (body.length == 0) {
+                result[0] = 0;
+            } else {
+                result[0] = memory().writeBytes(body);
+            }
+
+            return result;
+        }
+
+        public byte[] request(String method, URI uri, Map<String, String> headers, byte[] requestBody) {
+            var host = uri.getHost();
+            if (host == null || host.isBlank()) {
+                throw new ExtismHttpException("HTTP request host is invalid for URI: " + uri);
+            }
+            if (Arrays.stream(hostPatterns).noneMatch(p -> p.matches(host))) {
+                throw new ExtismHttpException(String.format("HTTP request to '%s' is not allowed", host));
+            }
+
+            return clientAdapter.request(method, uri, headers, requestBody);
+        }
+
+        long[] statusCode(Instance instance, long... args) {
+            return new long[]{statusCode()};
+        }
+
+        public int statusCode() {
+            return clientAdapter.statusCode();
+        }
+
+        long[] headers(Instance instance, long[] longs) {
+            var result = new long[1];
+            var headers = clientAdapter.headers();
+            if (headers == null) {
+                return result;
+            }
+            var bytes = jsonCodec.encodeHeaders(Map.of());
+            result[0] = memory().writeBytes(bytes);
+            return result;
+        }
+
+
+        public HostFunction[] toHostFunctions() {
+            return new HostFunction[]{
+                    new HostFunction(
+                            Kernel.IMPORT_MODULE_NAME,
+                            "http_request",
+                            List.of(ValueType.I64, ValueType.I64),
+                            List.of(ValueType.I64),
+                            this::request),
+                    new HostFunction(
+                            Kernel.IMPORT_MODULE_NAME,
+                            "http_status_code",
+                            List.of(),
+                            List.of(ValueType.I32),
+                            this::statusCode),
+                    new HostFunction(
+                            Kernel.IMPORT_MODULE_NAME,
+                            "http_headers",
+                            List.of(),
+                            List.of(ValueType.I64),
+                            this::headers),
+
+            };
+        }
     }
 
+    private static final class HostPattern {
+        private final String pattern;
+        private final boolean exact;
+
+        public HostPattern(String pattern) {
+            if (pattern.indexOf('*', 1) != -1) {
+                throw new ExtismException("Illegal pattern " + pattern);
+            }
+            int wildcard = pattern.indexOf('*');
+            if (wildcard < 0) {
+                this.exact = true;
+                this.pattern = pattern;
+            } else if (wildcard == 0) {
+                this.exact = false;
+                this.pattern = pattern.substring(1);
+            } else {
+                throw new ExtismException("Illegal pattern " + pattern);
+            }
+        }
+
+        public boolean matches(String host) {
+            if (exact) {
+                return host.equals(pattern);
+            } else {
+                return host.endsWith(pattern);
+            }
+        }
+    }
 
 }

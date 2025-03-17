@@ -3,6 +3,7 @@ package org.extism.sdk.chicory.core;
 import com.dylibso.chicory.log.SystemLogger;
 import junit.framework.TestCase;
 
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
@@ -24,5 +25,19 @@ public class HostEnvTest extends TestCase {
         int size = 100;
         long ptr = hostEnv.memory().alloc(size);
         assertEquals(hostEnv.memory().length(ptr), size);
+    }
+
+    public void testHttpThrows() {
+        var logger = new SystemLogger();
+
+        var config = Map.of("key", "value");
+        var hostEnv = new HostEnv(new Kernel(), ConfigProvider.ofMap(config), new String[0], null, logger);
+        try {
+            hostEnv.http().request("POST", URI.create("https://www.example.com"), Map.of(), new byte[0]);
+            fail("It should throw an ExtismConfigurationException");
+        } catch (ExtismConfigurationException ex) {
+            // expected
+        }
+
     }
 }
