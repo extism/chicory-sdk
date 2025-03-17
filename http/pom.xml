@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.extism.sdk</groupId>
+        <artifactId>chicory-sdk</artifactId>
+        <version>999-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>http</artifactId>
+    <packaging>pom</packaging>
+    <modules>
+        <module>json-jackson</module>
+        <module>json-jakarta</module>
+        <module>api</module>
+        <module>integration-tests</module>
+        <module>client-javanet</module>
+        <module>client-urlconnection</module>
+        <module>config-generic</module>
+        <module>config-android</module>
+    </modules>
+
+</project>
