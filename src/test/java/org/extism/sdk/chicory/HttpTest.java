@@ -11,7 +11,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-
+// Note: lvh.me resolves to localhost.
 public class HttpTest extends TestCase {
 
     private HttpBin httpBin;
@@ -31,10 +31,10 @@ public class HttpTest extends TestCase {
         var httpConfig = HttpConfig.defaultConfig();
         var logger = new SystemLogger();
 
-        var anyHost = new String[]{"*.localhost"};
+        var anyHost = new String[]{"*.lvh.me"};
         var hostEnv = new HostEnv(new Kernel(), ConfigProvider.empty(), anyHost, httpConfig, logger);
 
-        URI uri = URI.create("test.localhost:" + httpBin.getPort() + "/headers");
+        URI uri = URI.create("test.lvh.me:" + httpBin.getPort() + "/headers");
         try {
             byte[] response = hostEnv.http().request(
                     "GET",
@@ -78,7 +78,7 @@ public class HttpTest extends TestCase {
         var noAllowedHosts = new String[0];
         var hostEnv = new HostEnv(new Kernel(), ConfigProvider.empty(), noAllowedHosts, httpConfig, logger);
 
-        URI uri = URI.create("http://localhost:" + httpBin.getPort() + "/headers");
+        URI uri = URI.create("http://lvh.me:" + httpBin.getPort() + "/headers");
         try {
             hostEnv.http().request(
                     "GET",
@@ -87,19 +87,19 @@ public class HttpTest extends TestCase {
                     new byte[0]);
             fail("Should have thrown an exception");
         } catch (ExtismException e) {
-            assertEquals("HTTP request to 'localhost' is not allowed", e.getMessage());
+            assertEquals("HTTP request to 'lvh.me' is not allowed", e.getMessage());
         }
     }
 
     public void allowSingleHost(HttpConfig httpConfig) {
         var logger = new SystemLogger();
 
-        var anyHost = new String[]{"localhost"};
+        var anyHost = new String[]{"lvh.me"};
         var hostEnv = new HostEnv(new Kernel(), ConfigProvider.empty(), anyHost, httpConfig, logger);
 
         byte[] response = hostEnv.http().request(
                 "GET",
-                URI.create("http://localhost:" + httpBin.getPort() + "/headers"),
+                URI.create("http://lvh.me:" + httpBin.getPort() + "/headers"),
                 Map.of("X-Custom-Header", "hello"),
                 new byte[0]);
         JsonObject responseObject = Json.createReader(new ByteArrayInputStream(response)).readObject();
@@ -107,7 +107,7 @@ public class HttpTest extends TestCase {
 
         byte[] response2 = hostEnv.http().request(
                 "POST",
-                URI.create("http://localhost:" + httpBin.getPort() + "/post"),
+                URI.create("http://lvh.me:" + httpBin.getPort() + "/post"),
                 Map.of("Content-Type", "text/plain"),
                 "hello".getBytes(StandardCharsets.UTF_8));
 
@@ -129,12 +129,12 @@ public class HttpTest extends TestCase {
     public void allowHostPattern(HttpConfig httpConfig) {
         var logger = new SystemLogger();
 
-        var anyHost = new String[]{"*.localhost"};
+        var anyHost = new String[]{"*.lvh.me"};
         var hostEnv = new HostEnv(new Kernel(), ConfigProvider.empty(), anyHost, httpConfig, logger);
 
         byte[] response = hostEnv.http().request(
                 "GET",
-                URI.create("http://www.localhost:" + httpBin.getPort() + "/headers"),
+                URI.create("http://www.lvh.me:" + httpBin.getPort() + "/headers"),
                 Map.of("X-Custom-Header", "hello"),
                 new byte[0]);
         JsonObject responseObject = Json.createReader(new ByteArrayInputStream(response)).readObject();
@@ -144,12 +144,12 @@ public class HttpTest extends TestCase {
         try {
             hostEnv.http().request(
                     "GET",
-                    URI.create("http://localhost:" + httpBin.getPort() + "/headers"),
+                    URI.create("http://lvh.me:" + httpBin.getPort() + "/headers"),
                     Map.of("X-Custom-Header", "hello"),
                     new byte[0]);
             fail("Should have thrown an exception");
         } catch (ExtismException e) {
-            assertEquals("HTTP request to 'localhost' is not allowed", e.getMessage());
+            assertEquals("HTTP request to 'lvh.me' is not allowed", e.getMessage());
         }
     }
 
@@ -157,12 +157,12 @@ public class HttpTest extends TestCase {
     public void allowMultiHostPattern(HttpConfig httpConfig) {
         var logger = new SystemLogger();
 
-        var anyHost = new String[]{"*.localhost", "localhost"};
+        var anyHost = new String[]{"*.lvh.me", "lvh.me"};
         var hostEnv = new HostEnv(new Kernel(), ConfigProvider.empty(), anyHost, httpConfig, logger);
 
         byte[] response = hostEnv.http().request(
                 "GET",
-                URI.create("http://www.localhost:" + httpBin.getPort() + "/headers"),
+                URI.create("http://www.lvh.me:" + httpBin.getPort() + "/headers"),
                 Map.of("X-Custom-Header", "hello"),
                 new byte[0]);
         JsonObject responseObject = Json.createReader(new ByteArrayInputStream(response)).readObject();
@@ -171,7 +171,7 @@ public class HttpTest extends TestCase {
 
         response = hostEnv.http().request(
                 "GET",
-                URI.create("http://localhost:" + httpBin.getPort() + "/headers"),
+                URI.create("http://lvh.me:" + httpBin.getPort() + "/headers"),
                 Map.of("X-Custom-Header", "hello"),
                 new byte[0]);
         responseObject = Json.createReader(new ByteArrayInputStream(response)).readObject();
@@ -187,7 +187,7 @@ public class HttpTest extends TestCase {
 
         byte[] response = hostEnv.http().request(
                 "GET",
-                URI.create("http://www.localhost:"  + httpBin.getPort() + "/headers"),
+                URI.create("http://www.lvh.me:"  + httpBin.getPort() + "/headers"),
                 Map.of("X-Custom-Header", "hello"),
                 new byte[0]);
         JsonObject responseObject = Json.createReader(new ByteArrayInputStream(response)).readObject();
@@ -196,7 +196,7 @@ public class HttpTest extends TestCase {
 
         response = hostEnv.http().request(
                 "GET",
-                URI.create("http://localhost:" + httpBin.getPort() + "/headers"),
+                URI.create("http://lvh.me:" + httpBin.getPort() + "/headers"),
                 Map.of("X-Custom-Header", "hello"),
                 new byte[0]);
         responseObject = Json.createReader(new ByteArrayInputStream(response)).readObject();
