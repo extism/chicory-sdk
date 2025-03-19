@@ -56,7 +56,7 @@ public class Plugin {
     Plugin(Instance main, HostEnv hostEnv) {
         this.mainInstance = main;
         this.hostEnv = hostEnv;
-        mainInstance.initialize(true);
+//        mainInstance.initialize(true);
     }
 
     public HostEnv.Log log() {
