@@ -4,6 +4,7 @@ import com.dylibso.chicory.log.SystemLogger;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import junit.framework.TestCase;
+import org.gaul.httpbin.HttpBin;
 
 import java.io.ByteArrayInputStream;
 import java.net.URI;
@@ -13,22 +14,36 @@ import java.util.Map;
 
 public class HttpTest extends TestCase {
 
+    private HttpBin httpBin;
+
+    protected void setUp() throws Exception {
+        super.setUp();
+        URI httpBinEndpoint = URI.create("http://127.0.0.1:0");
+        httpBin = new HttpBin(httpBinEndpoint);
+        httpBin.start();
+    }
+
+    public void tearDown() throws Exception {
+        httpBin.stop();
+    }
+
     public void testInvalidHost() {
         var httpConfig = HttpConfig.defaultConfig();
         var logger = new SystemLogger();
 
-        var anyHost = new String[]{"*.httpbin.org"};
+        var anyHost = new String[]{"*.localhost"};
         var hostEnv = new HostEnv(new Kernel(), ConfigProvider.empty(), anyHost, httpConfig, logger);
 
+        URI uri = URI.create("test.localhost:" + httpBin.getPort() + "/headers");
         try {
             byte[] response = hostEnv.http().request(
                     "GET",
-                    URI.create("httpbin.org/headers"),
+                    uri,
                     Map.of("X-Custom-Header", "hello"),
                     new byte[0]);
             fail("should throw an exception");
         } catch (ExtismHttpException e) {
-            assertEquals("HTTP request host is invalid for URI: httpbin.org/headers", e.getMessage());
+            assertEquals("HTTP request host is invalid for URI: " + uri, e.getMessage());
         }
     }
 
@@ -63,27 +78,28 @@ public class HttpTest extends TestCase {
         var noAllowedHosts = new String[0];
         var hostEnv = new HostEnv(new Kernel(), ConfigProvider.empty(), noAllowedHosts, httpConfig, logger);
 
+        URI uri = URI.create("http://localhost:" + httpBin.getPort() + "/headers");
         try {
             hostEnv.http().request(
                     "GET",
-                    URI.create("http://httpbin.org/headers"),
+                    uri,
                     Map.of("X-Custom-Header", "hello"),
                     new byte[0]);
             fail("Should have thrown an exception");
         } catch (ExtismException e) {
-            assertEquals("HTTP request to 'httpbin.org' is not allowed", e.getMessage());
+            assertEquals("HTTP request to 'localhost' is not allowed", e.getMessage());
         }
     }
 
     public void allowSingleHost(HttpConfig httpConfig) {
         var logger = new SystemLogger();
 
-        var anyHost = new String[]{"httpbin.org"};
+        var anyHost = new String[]{"localhost"};
         var hostEnv = new HostEnv(new Kernel(), ConfigProvider.empty(), anyHost, httpConfig, logger);
 
         byte[] response = hostEnv.http().request(
                 "GET",
-                URI.create("http://httpbin.org/headers"),
+                URI.create("http://localhost:" + httpBin.getPort() + "/headers"),
                 Map.of("X-Custom-Header", "hello"),
                 new byte[0]);
         JsonObject responseObject = Json.createReader(new ByteArrayInputStream(response)).readObject();
@@ -91,7 +107,7 @@ public class HttpTest extends TestCase {
 
         byte[] response2 = hostEnv.http().request(
                 "POST",
-                URI.create("http://httpbin.org/post"),
+                URI.create("http://localhost:" + httpBin.getPort() + "/post"),
                 Map.of("Content-Type", "text/plain"),
                 "hello".getBytes(StandardCharsets.UTF_8));
 
@@ -113,12 +129,12 @@ public class HttpTest extends TestCase {
     public void allowHostPattern(HttpConfig httpConfig) {
         var logger = new SystemLogger();
 
-        var anyHost = new String[]{"*.httpbin.org"};
+        var anyHost = new String[]{"*.localhost"};
         var hostEnv = new HostEnv(new Kernel(), ConfigProvider.empty(), anyHost, httpConfig, logger);
 
         byte[] response = hostEnv.http().request(
                 "GET",
-                URI.create("http://www.httpbin.org/headers"),
+                URI.create("http://www.localhost:" + httpBin.getPort() + "/headers"),
                 Map.of("X-Custom-Header", "hello"),
                 new byte[0]);
         JsonObject responseObject = Json.createReader(new ByteArrayInputStream(response)).readObject();
@@ -128,12 +144,12 @@ public class HttpTest extends TestCase {
         try {
             hostEnv.http().request(
                     "GET",
-                    URI.create("http://httpbin.org/headers"),
+                    URI.create("http://localhost:" + httpBin.getPort() + "/headers"),
                     Map.of("X-Custom-Header", "hello"),
                     new byte[0]);
             fail("Should have thrown an exception");
         } catch (ExtismException e) {
-            assertEquals("HTTP request to 'httpbin.org' is not allowed", e.getMessage());
+            assertEquals("HTTP request to 'localhost' is not allowed", e.getMessage());
         }
     }
 
@@ -141,12 +157,12 @@ public class HttpTest extends TestCase {
     public void allowMultiHostPattern(HttpConfig httpConfig) {
         var logger = new SystemLogger();
 
-        var anyHost = new String[]{"*.httpbin.org", "httpbin.org"};
+        var anyHost = new String[]{"*.localhost", "localhost"};
         var hostEnv = new HostEnv(new Kernel(), ConfigProvider.empty(), anyHost, httpConfig, logger);
 
         byte[] response = hostEnv.http().request(
                 "GET",
-                URI.create("http://www.httpbin.org/headers"),
+                URI.create("http://www.localhost:" + httpBin.getPort() + "/headers"),
                 Map.of("X-Custom-Header", "hello"),
                 new byte[0]);
         JsonObject responseObject = Json.createReader(new ByteArrayInputStream(response)).readObject();
@@ -155,7 +171,7 @@ public class HttpTest extends TestCase {
 
         response = hostEnv.http().request(
                 "GET",
-                URI.create("http://httpbin.org/headers"),
+                URI.create("http://localhost:" + httpBin.getPort() + "/headers"),
                 Map.of("X-Custom-Header", "hello"),
                 new byte[0]);
         responseObject = Json.createReader(new ByteArrayInputStream(response)).readObject();
@@ -171,7 +187,7 @@ public class HttpTest extends TestCase {
 
         byte[] response = hostEnv.http().request(
                 "GET",
-                URI.create("http://www.httpbin.org/headers"),
+                URI.create("http://www.localhost:"  + httpBin.getPort() + "/headers"),
                 Map.of("X-Custom-Header", "hello"),
                 new byte[0]);
         JsonObject responseObject = Json.createReader(new ByteArrayInputStream(response)).readObject();
@@ -180,7 +196,7 @@ public class HttpTest extends TestCase {
 
         response = hostEnv.http().request(
                 "GET",
-                URI.create("http://httpbin.org/headers"),
+                URI.create("http://localhost:" + httpBin.getPort() + "/headers"),
                 Map.of("X-Custom-Header", "hello"),
                 new byte[0]);
         responseObject = Json.createReader(new ByteArrayInputStream(response)).readObject();
