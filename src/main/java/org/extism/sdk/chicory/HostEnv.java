@@ -108,7 +108,7 @@ public class HostEnv {
             return ptr;
         }
 
-        long writeString(String s) {
+        public long writeString(String s) {
             return writeBytes(s.getBytes(StandardCharsets.UTF_8));
         }
     }
