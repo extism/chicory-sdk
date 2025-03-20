@@ -1,9 +1,15 @@
-package org.extism.sdk.chicory;
+package org.extism.sdk.chicory.e2e;
 
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import junit.framework.TestCase;
+import org.extism.sdk.chicory.ExtismFunction;
+import org.extism.sdk.chicory.ExtismHostFunction;
+import org.extism.sdk.chicory.ExtismValType;
+import org.extism.sdk.chicory.Manifest;
+import org.extism.sdk.chicory.ManifestWasm;
+import org.extism.sdk.chicory.Plugin;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
