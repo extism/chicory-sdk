@@ -93,16 +93,16 @@ public class HostEnv {
             return kernel.alloc.apply(size)[0];
         }
 
-        byte[] readBytes(long offset) {
+        public byte[] readBytes(long offset) {
             long length = length(offset);
             return memory().readBytes((int) offset, (int) length);
         }
 
-        String readString(long offset) {
+        public String readString(long offset) {
             return new String(readBytes(offset), StandardCharsets.UTF_8);
         }
 
-        long writeBytes(byte[] bytes) {
+        public long writeBytes(byte[] bytes) {
             long ptr = alloc(bytes.length);
             memory().write((int) ptr, bytes);
             return ptr;
