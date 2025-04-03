@@ -5,6 +5,7 @@ import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import junit.framework.TestCase;
 import org.extism.sdk.chicory.ExtismFunction;
+import org.extism.sdk.chicory.ExtismFunctionException;
 import org.extism.sdk.chicory.ExtismHostFunction;
 import org.extism.sdk.chicory.ExtismValType;
 import org.extism.sdk.chicory.Manifest;
@@ -21,6 +22,21 @@ import java.util.List;
 import java.util.Map;
 
 public class PluginTest extends TestCase {
+
+    public void testRollDice() {
+        var path = Path.of("./src/test/resources/rollDice-void-return/main.wasm");
+        var wasm = ManifestWasm.fromFilePath(path).build();
+        var manifest = Manifest.ofWasms(wasm).build();
+        var plugin = Plugin.ofManifest(manifest).build();
+        var input = "{ \"numFaces\": 6, \"numDice\": 2 }";
+        ExtismFunctionException ex = null;
+        try {
+            plugin.call("rollDice", input.getBytes(StandardCharsets.UTF_8));
+        } catch (ExtismFunctionException e) {
+            ex = e;
+        }
+        assertTrue(ex.getMessage().contains("i32 return code"));
+    }
 
     public void testGreet() {
         var url = "https://github.com/extism/plugins/releases/download/v1.1.1/greet.wasm";
