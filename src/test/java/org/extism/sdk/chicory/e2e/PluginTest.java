@@ -24,14 +24,13 @@ import java.util.Map;
 public class PluginTest extends TestCase {
 
     public void testRollDice() {
-        var path = Path.of("./src/test/resources/rollDice-void-return/main.wasm");
+        var path = Path.of("./src/test/resources/void-return/void-return.wasm");
         var wasm = ManifestWasm.fromFilePath(path).build();
         var manifest = Manifest.ofWasms(wasm).build();
         var plugin = Plugin.ofManifest(manifest).build();
-        var input = "{ \"numFaces\": 6, \"numDice\": 2 }";
         ExtismFunctionException ex = null;
         try {
-            plugin.call("rollDice", input.getBytes(StandardCharsets.UTF_8));
+            var out = plugin.call("dummy", new byte[0]);
         } catch (ExtismFunctionException e) {
             ex = e;
         }
