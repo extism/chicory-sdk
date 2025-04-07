@@ -39,6 +39,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.gaul</groupId>
+            <artifactId>httpbin</artifactId>
+            <version>${httpbin.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>${junit.version}</version>
