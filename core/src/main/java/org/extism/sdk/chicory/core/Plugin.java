@@ -56,7 +56,7 @@ public class Plugin {
     Plugin(Instance main, HostEnv hostEnv) {
         this.mainInstance = main;
         this.hostEnv = hostEnv;
-        mainInstance.initialize(true);
+//        mainInstance.initialize(true);
     }
 
     public HostEnv.Log log() {
@@ -83,7 +83,11 @@ public class Plugin {
     public byte[] call(String funcName, byte[] input) {
         var func = mainInstance.export(funcName);
         setInput(input);
-        var result = func.apply()[0];
+        var results = func.apply();
+        if (results == null) {
+            throw new ExtismFunctionException(funcName, "The function expects an i32 return code. 0 is success and 1 is a failure.");
+        }
+        var result = results[0];
         if (result == 0) {
             return getOutput();
         } else {
