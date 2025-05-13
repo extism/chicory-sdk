@@ -1,6 +1,7 @@
 package org.extism.sdk.chicory.e2e;
 
 import com.dylibso.chicory.wasi.WasiOptions;
+import com.dylibso.chicory.wasm.UninstantiableException;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import junit.framework.TestCase;
@@ -50,11 +51,25 @@ public class PluginTest extends TestCase {
     public void testGreetAoT() {
         var url = "https://github.com/extism/plugins/releases/download/v1.1.1/greet.wasm";
         var wasm = ManifestWasm.fromUrl(url).build();
-        var manifest = Manifest.ofWasms(wasm).withOptions(new Manifest.Options().withAoT()).build();
+        var manifest = Manifest.ofWasms(wasm).withOptions(new Manifest.Options().withAoT()
+                .withMemoryLimits(18, 20)).build();
         var plugin = Plugin.ofManifest(manifest).build();
         var input = "Benjamin";
         var result = new String(plugin.call("greet", input.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);
         assertEquals("Hello, Benjamin!", result);
+    }
+
+    public void testGreetFailingMemory() {
+        var url = "https://github.com/extism/plugins/releases/download/v1.1.1/greet.wasm";
+        var wasm = ManifestWasm.fromUrl(url).build();
+        var manifest = Manifest.ofWasms(wasm).withOptions(new Manifest.Options().withAoT()
+                .withMemoryLimits(7, 18)).build();
+        try {
+            Plugin.ofManifest(manifest).build();
+            fail("The memory limits shouldn't be sufficient");
+        } catch (UninstantiableException ex) {
+            assertTrue(ex.getMessage().contains("limit is: 458752 and size: 1768"));
+        }
     }
 
     public void testCountVowels() {
@@ -87,7 +102,8 @@ public class PluginTest extends TestCase {
         var wasm = ManifestWasm.fromUrl(url).build();
         var config = Map.of("vowels", "aeiouyAEIOUY");
         var manifest = Manifest.ofWasms(wasm)
-                .withOptions(new Manifest.Options().withConfig(config)).build();
+                .withOptions(new Manifest.Options().withConfig(config)
+                        .withMemoryLimits(18, 20)).build();
         var plugin = Plugin.ofManifest(manifest).build();
 
         {
@@ -148,7 +164,6 @@ public class PluginTest extends TestCase {
         assertEquals("{\"count\":3,\"total\":3,\"vowels\":\"aeiouAEIOU\"}", result);
     }
 
-
     public void testWasi() throws IOException {
         var url = "https://github.com/extism/plugins/releases/download/v1.1.1/read_write.wasm";
         var wasm = ManifestWasm.fromUrl(url).build();
@@ -162,12 +177,12 @@ public class PluginTest extends TestCase {
             var config = Map.of("path", path.toString());
             var manifest = Manifest.ofWasms(wasm)
                     .withOptions(new Manifest.Options()
+                            .withMemoryLimits(20, 20)
                             .withConfig(config)
                             .withWasi(WasiOptions.builder()
                                     .withArguments(List.of("read_write"))
                                     .withDirectory("/tmp", tmp).build())).build();
             var plugin = Plugin.ofManifest(manifest).build();
-
 
             Files.writeString(path, "hello world", StandardOpenOption.CREATE);
             var output = plugin.call("try_read", new byte[0]);

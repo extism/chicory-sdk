@@ -2,6 +2,7 @@ package org.extism.sdk.chicory;
 
 import com.dylibso.chicory.wasi.WasiOptions;
 
+import com.dylibso.chicory.wasm.types.MemoryLimits;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +20,7 @@ public class Manifest {
         WasiOptions wasiOptions = WasiOptions.builder().build();
         String[] allowedHosts = new String[0];
         HttpConfig httpConfig = HttpConfig.defaultConfig();
+        MemoryLimits memoryLimits = null;
 
         public Options withAoT() {
             return withAoT(true);
@@ -62,6 +64,11 @@ public class Manifest {
 
         public Options withWasi(WasiOptions wasiOptions) {
             this.wasiOptions = wasiOptions;
+            return this;
+        }
+
+        public Options withMemoryLimits(int initial, int max) {
+            this.memoryLimits = new MemoryLimits(initial, max);
             return this;
         }
 
