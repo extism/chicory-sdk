@@ -1,5 +1,6 @@
 package org.extism.sdk.chicory;
 
+import com.dylibso.chicory.runtime.ByteArrayMemory;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
@@ -35,6 +36,11 @@ class ChicoryModule {
         // This feature is not compatibly with the native-image builder.
         if (opts.aot && !IS_NATIVE_IMAGE_AOT) {
             m.withMachineFactory(aotMachineFactory);
+        }
+        if (opts.memoryLimits != null) {
+            m.withMemoryFactory(limits -> {
+                return new ByteArrayMemory(limits);
+            }).withMemoryLimits(opts.memoryLimits);
         }
         if (!opts.validationFlags.isEmpty()) {
             throw new UnsupportedOperationException("Validation flags are not supported yet");
