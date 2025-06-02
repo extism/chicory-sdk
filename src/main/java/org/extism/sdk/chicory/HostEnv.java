@@ -3,7 +3,8 @@ package org.extism.sdk.chicory;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.wasm.types.ValueType;
+import com.dylibso.chicory.wasm.types.FunctionType;
+import com.dylibso.chicory.wasm.types.ValType;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -78,7 +79,6 @@ public class HostEnv {
         return this.memory;
     }
 
-
     public class Memory {
 
         public long length(long offset) {
@@ -116,7 +116,9 @@ public class HostEnv {
     public class Log {
 
         private LogLevel logLevel = LogLevel.INFO;
-        private Log() {}
+
+        private Log() {
+        }
 
         public void setLogLevel(LogLevel level) {
             // We assume the Chicory logger is a j.u.l.Logger.
@@ -160,7 +162,6 @@ public class HostEnv {
             return log(LogLevel.ERROR, args[0]);
         }
 
-
         private long[] log(LogLevel level, long offset) {
             String msg = memory().readString(offset);
             log(level, msg);
@@ -173,16 +174,17 @@ public class HostEnv {
 
         HostFunction[] toHostFunctions() {
             return new HostFunction[]{
-                    new HostFunction(Kernel.IMPORT_MODULE_NAME, "log_trace", List.of(ValueType.I64), List.of(), this::logTrace),
-                    new HostFunction(Kernel.IMPORT_MODULE_NAME, "log_debug", List.of(ValueType.I64), List.of(), this::logDebug),
-                    new HostFunction(Kernel.IMPORT_MODULE_NAME, "log_info", List.of(ValueType.I64), List.of(), this::logInfo),
-                    new HostFunction(Kernel.IMPORT_MODULE_NAME, "log_warn", List.of(ValueType.I64), List.of(), this::logWarn),
-                    new HostFunction(Kernel.IMPORT_MODULE_NAME, "log_error", List.of(ValueType.I64), List.of(), this::logError),
-                    new HostFunction(Kernel.IMPORT_MODULE_NAME, "get_log_level", List.of(), List.of(ValueType.I32), this::getLogLevel)};
+                new HostFunction(Kernel.IMPORT_MODULE_NAME, "log_trace", FunctionType.of(List.of(ValType.I64), List.of()), this::logTrace),
+                new HostFunction(Kernel.IMPORT_MODULE_NAME, "log_debug", FunctionType.of(List.of(ValType.I64), List.of()), this::logDebug),
+                new HostFunction(Kernel.IMPORT_MODULE_NAME, "log_info", FunctionType.of(List.of(ValType.I64), List.of()), this::logInfo),
+                new HostFunction(Kernel.IMPORT_MODULE_NAME, "log_warn", FunctionType.of(List.of(ValType.I64), List.of()), this::logWarn),
+                new HostFunction(Kernel.IMPORT_MODULE_NAME, "log_error", FunctionType.of(List.of(ValType.I64), List.of()), this::logError),
+                new HostFunction(Kernel.IMPORT_MODULE_NAME, "get_log_level", FunctionType.of(List.of(), List.of(ValType.I32)), this::getLogLevel)};
         }
     }
 
     public class Var {
+
         private final Map<String, byte[]> vars = new ConcurrentHashMap<>();
 
         private Var() {
@@ -230,12 +232,10 @@ public class HostEnv {
             return new long[0];
         }
 
-
         HostFunction[] toHostFunctions() {
             return new HostFunction[]{
-                    new HostFunction(Kernel.IMPORT_MODULE_NAME, "var_get", List.of(ValueType.I64), List.of(ValueType.I64), this::varGet),
-                    new HostFunction(Kernel.IMPORT_MODULE_NAME, "var_set", List.of(ValueType.I64, ValueType.I64), List.of(), this::varSet),
-            };
+                new HostFunction(Kernel.IMPORT_MODULE_NAME, "var_get", FunctionType.of(List.of(ValType.I64), List.of(ValType.I64)), this::varGet),
+                new HostFunction(Kernel.IMPORT_MODULE_NAME, "var_set", FunctionType.of(List.of(ValType.I64, ValType.I64), List.of()), this::varSet),};
         }
     }
 
@@ -268,13 +268,14 @@ public class HostEnv {
 
         HostFunction[] toHostFunctions() {
             return new HostFunction[]{
-                    new HostFunction(Kernel.IMPORT_MODULE_NAME, "config_get", List.of(ValueType.I64), List.of(ValueType.I64), this::configGet)
+                new HostFunction(Kernel.IMPORT_MODULE_NAME, "config_get",  FunctionType.of(List.of(ValType.I64), List.of(ValType.I64)), this::configGet)
             };
         }
 
     }
 
     public class Http {
+
         private final HostPattern[] hostPatterns;
         Lazy<HttpJsonCodec> jsonCodec;
         Lazy<HttpClientAdapter> clientAdapter;
@@ -364,33 +365,28 @@ public class HostEnv {
             return result;
         }
 
-
         public HostFunction[] toHostFunctions() {
             return new HostFunction[]{
-                    new HostFunction(
-                            Kernel.IMPORT_MODULE_NAME,
-                            "http_request",
-                            List.of(ValueType.I64, ValueType.I64),
-                            List.of(ValueType.I64),
-                            this::request),
-                    new HostFunction(
-                            Kernel.IMPORT_MODULE_NAME,
-                            "http_status_code",
-                            List.of(),
-                            List.of(ValueType.I32),
-                            this::statusCode),
-                    new HostFunction(
-                            Kernel.IMPORT_MODULE_NAME,
-                            "http_headers",
-                            List.of(),
-                            List.of(ValueType.I64),
-                            this::headers),
-
-            };
+                new HostFunction(
+                Kernel.IMPORT_MODULE_NAME,
+                "http_request",
+                FunctionType.of(List.of(ValType.I64, ValType.I64), List.of(ValType.I64)),
+                this::request),
+                new HostFunction(
+                Kernel.IMPORT_MODULE_NAME,
+                "http_status_code",
+                FunctionType.of(List.of(), List.of(ValType.I32)),
+                this::statusCode),
+                new HostFunction(
+                Kernel.IMPORT_MODULE_NAME,
+                "http_headers",
+                FunctionType.of(List.of(), List.of(ValType.I64)),
+                this::headers),};
         }
     }
 
     private static final class HostPattern {
+
         private final String pattern;
         private final boolean exact;
 
@@ -420,25 +416,27 @@ public class HostEnv {
     }
 
     private static final class Lazy<T> {
+
         final Supplier<T> supplier;
         T t;
+
         public Lazy(Supplier<T> supplier) {
             this.supplier = supplier;
         }
+
         public T get() {
             if (t == null) {
                 try {
                     t = supplier.get();
                 } catch (NoClassDefFoundError error) {
                     throw new ConfigurationException(
-                            "Http has not been configured properly. " +
-                                    "Verify you have added a dependency to the JSON deserializer (default: Jackson Databind) " +
-                                    "and you have have configure the HTTP client properly (default: java.net.http.HttpClient)", error);
+                            "Http has not been configured properly. "
+                            + "Verify you have added a dependency to the JSON deserializer (default: Jackson Databind) "
+                            + "and you have have configure the HTTP client properly (default: java.net.http.HttpClient)", error);
                 }
             }
             return t;
         }
     }
-
 
 }

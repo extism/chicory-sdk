@@ -329,7 +329,7 @@ class DependencyGraph {
 
         public HostFunction asHostFunction(String moduleName, String name, FunctionType functionType) {
             return new HostFunction(moduleName, name,
-                    functionType.params(), functionType.returns(), this);
+                    FunctionType.of(functionType.params(), functionType.returns()), this);
         }
     }
 

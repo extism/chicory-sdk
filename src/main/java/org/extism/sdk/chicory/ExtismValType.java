@@ -1,20 +1,20 @@
 package org.extism.sdk.chicory;
 
-import com.dylibso.chicory.wasm.types.ValueType;
+import com.dylibso.chicory.wasm.types.ValType;
 
 public enum ExtismValType {
-    I32(ValueType.I32),
-    I64(ValueType.I64),
-    F32(ValueType.F32),
-    F64(ValueType.F64);
+    I32(ValType.I32),
+    I64(ValType.I64),
+    F32(ValType.F32),
+    F64(ValType.F64);
 
-    private final ValueType chicoryType;
+    private final ValType chicoryType;
 
-    ExtismValType(ValueType chicoryType) {
+    ExtismValType(ValType chicoryType) {
         this.chicoryType = chicoryType;
     }
 
-    ValueType toChicoryValueType() {
+    ValType toChicoryValueType() {
         return chicoryType;
     }
 

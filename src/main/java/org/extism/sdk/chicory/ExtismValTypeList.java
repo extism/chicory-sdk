@@ -1,6 +1,6 @@
 package org.extism.sdk.chicory;
 
-import com.dylibso.chicory.wasm.types.ValueType;
+import com.dylibso.chicory.wasm.types.ValType;
 
 import java.util.Arrays;
 import java.util.List;
@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 
 class ExtismValTypeList {
     private final ExtismValType[] types;
-    private final List<ValueType> chicoryTypes;
+    private final List<ValType> chicoryTypes;
 
     ExtismValTypeList(List<ExtismValType> types) {
         this.types = types.toArray(ExtismValType[]::new);
@@ -16,7 +16,7 @@ class ExtismValTypeList {
                 .collect(Collectors.toList());
     }
 
-    List<ValueType> toChicoryTypes() {
+    List<ValType> toChicoryTypes() {
         return Arrays.stream(types)
                 .map(ExtismValType::toChicoryValueType)
                 .collect(Collectors.toList());
