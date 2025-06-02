@@ -2,6 +2,7 @@ package org.extism.sdk.chicory;
 
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.wasm.types.FunctionType;
 
 import java.util.List;
 
@@ -56,7 +57,7 @@ public final class ExtismHostFunction {
 
     final HostFunction asHostFunction() {
         return new HostFunction(
-                module, name, paramTypes.toChicoryTypes(), returnTypes.toChicoryTypes(),
+                module, name, FunctionType.of(paramTypes.toChicoryTypes(), returnTypes.toChicoryTypes()),
                 (Instance inst, long... args) -> {
                     var params = paramTypes.toExtismValueList(args);
                     var results = returnTypes.toExtismValueList();
