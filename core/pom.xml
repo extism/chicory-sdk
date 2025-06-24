@@ -24,8 +24,9 @@
         </dependency>
         <dependency>
             <groupId>com.dylibso.chicory</groupId>
-            <artifactId>aot-experimental</artifactId>
-            <version>${chicory.version}</version>
+            <artifactId>compiler</artifactId>
+            <version>1.4.0</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.extism.sdk</groupId>

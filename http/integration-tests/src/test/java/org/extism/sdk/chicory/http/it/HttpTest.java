@@ -50,7 +50,7 @@ public class HttpTest extends TestCase {
                     new byte[0]);
             fail("Should have thrown an exception");
         } catch (ExtismHttpException e) {
-            assertEquals("HTTP request to 'test.lvh.me' is not allowed", e.getMessage());
+            assertEquals("HTTP request host is invalid for URI: " + uri, e.getMessage());
         }
     }
     public void noAllowedHosts(HttpConfig httpConfig) {
