@@ -417,27 +417,4 @@ public class HostEnv {
         }
     }
 
-    private static final class Lazy<T> {
-
-        final java.util.function.Supplier<T> supplier;
-        T t;
-
-        public Lazy(java.util.function.Supplier<T> supplier) {
-            this.supplier = supplier;
-        }
-
-        public T get() {
-            if (t == null) {
-                try {
-                    t = supplier.get();
-                } catch (NoClassDefFoundError error) {
-                    throw new ExtismConfigurationException(
-                            "Http has not been configured properly. " +
-                            "Verify you have added a dependency to the JSON deserializer (default: Jackson Databind) " +
-                            "and the correct HttpConfig implementation.");
-                }
-            }
-            return t;
-        }
-    }
 }
