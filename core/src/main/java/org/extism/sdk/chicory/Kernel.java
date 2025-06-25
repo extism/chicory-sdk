@@ -1,4 +1,4 @@
-package org.extism.sdk.chicory.core;
+package org.extism.sdk.chicory;
 
 import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.runtime.HostFunction;

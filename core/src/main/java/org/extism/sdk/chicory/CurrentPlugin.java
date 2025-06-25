@@ -1,4 +1,4 @@
-package org.extism.sdk.chicory.core;
+package org.extism.sdk.chicory;
 
 public class CurrentPlugin {
     private final Plugin plugin;
