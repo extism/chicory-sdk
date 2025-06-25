@@ -27,32 +27,63 @@ public class HttpTest extends TestCase {
         return AndroidHttpConfig.get();
     }
     private HttpBin httpBin;
+
     protected void setUp() throws Exception {
         super.setUp();
         URI httpBinEndpoint = URI.create("http://127.0.0.1:0");
         httpBin = new HttpBin(httpBinEndpoint);
         httpBin.start();
     }
+
     public void tearDown() throws Exception {
         httpBin.stop();
     }
+
     public void testInvalidHost() {
         var httpConfig = defaultConfig();
         var logger = new SystemLogger();
+
         var anyHost = new String[]{"*.lvh.me"};
         var hostEnv = new HostEnv(new Kernel(), ConfigProvider.empty(), anyHost, httpConfig, logger);
+
         URI uri = URI.create("test.lvh.me:" + httpBin.getPort() + "/headers");
         try {
-            hostEnv.http().request(
+            byte[] response = hostEnv.http().request(
                     "GET",
                     uri,
                     Map.of("X-Custom-Header", "hello"),
                     new byte[0]);
-            fail("Should have thrown an exception");
+            fail("should throw an exception");
         } catch (ExtismHttpException e) {
             assertEquals("HTTP request host is invalid for URI: " + uri, e.getMessage());
         }
     }
+
+    public void testNoAllowedHosts() {
+        noAllowedHosts(defaultConfig());
+        noAllowedHosts(urlConnectionConfig());
+    }
+
+    public void testAllowSingleHost() {
+        allowSingleHost(defaultConfig());
+        allowSingleHost(urlConnectionConfig());
+    }
+
+    public void testAllowHostPattern() {
+        allowHostPattern(defaultConfig());
+        allowHostPattern(urlConnectionConfig());
+    }
+
+    public void testAllowMultiHostPattern() {
+        allowMultiHostPattern(defaultConfig());
+        allowMultiHostPattern(urlConnectionConfig());
+    }
+
+    public void testAllowAnyHost() {
+        allowAnyHost(defaultConfig());
+        allowAnyHost(urlConnectionConfig());
+    }
+
     public void noAllowedHosts(HttpConfig httpConfig) {
         var logger = new SystemLogger();
 
@@ -71,31 +102,42 @@ public class HttpTest extends TestCase {
             assertEquals("HTTP request to 'lvh.me' is not allowed", e.getMessage());
         }
     }
+
     public void allowSingleHost(HttpConfig httpConfig) {
         var logger = new SystemLogger();
 
-        var allowedHosts = new String[]{"www.lvh.me"};
-        var hostEnv = new HostEnv(new Kernel(), ConfigProvider.empty(), allowedHosts, httpConfig, logger);
+        var anyHost = new String[]{"lvh.me"};
+        var hostEnv = new HostEnv(new Kernel(), ConfigProvider.empty(), anyHost, httpConfig, logger);
 
         byte[] response = hostEnv.http().request(
                 "GET",
-                URI.create("http://www.lvh.me:" + httpBin.getPort() + "/headers"),
+                URI.create("http://lvh.me:" + httpBin.getPort() + "/headers"),
                 Map.of("X-Custom-Header", "hello"),
                 new byte[0]);
         JsonObject responseObject = Json.createReader(new ByteArrayInputStream(response)).readObject();
         assertEquals("hello", responseObject.getJsonObject("headers").getString("X-Custom-Header"));
 
+        byte[] response2 = hostEnv.http().request(
+                "POST",
+                URI.create("http://lvh.me:" + httpBin.getPort() + "/post"),
+                Map.of("Content-Type", "text/plain"),
+                "hello".getBytes(StandardCharsets.UTF_8));
+
+        JsonObject responseObject2 = Json.createReader(new ByteArrayInputStream(response2)).readObject();
+        assertEquals("hello", responseObject2.getString("data"));
+
         try {
             hostEnv.http().request(
                     "GET",
-                    URI.create("http://lvh.me:" + httpBin.getPort() + "/headers"),
+                    URI.create("http://example.com"),
                     Map.of("X-Custom-Header", "hello"),
                     new byte[0]);
             fail("Should have thrown an exception");
         } catch (ExtismHttpException e) {
-            assertEquals("HTTP request to 'lvh.me' is not allowed", e.getMessage());
+            assertEquals("HTTP request to 'example.com' is not allowed", e.getMessage());
         }
     }
+
     public void allowHostPattern(HttpConfig httpConfig) {
         var logger = new SystemLogger();
 
