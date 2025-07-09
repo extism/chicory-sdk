@@ -3,15 +3,11 @@ package org.extism.sdk.chicory;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-/**
- * @deprecated instead use <code>org.extism.sdk.chicory.http.config.generic.GenericHttpConfig</code>
- *             in <code>org.extism.sdk:http-config-generic</code>
- */
 @Deprecated(forRemoval = true)
 public class HttpConfig {
     /**
-     * Use {@link JdkHttpClientAdapter} for the HTTP client adapter.
-     * Recommended on recent Java versions.
+     * @deprecated instead use <code>org.extism.sdk.chicory.http.config.generic.GenericHttpConfig</code>
+     *             in <code>org.extism.sdk:http-config-generic</code>
      */
     @Deprecated(forRemoval = true)
     public static HttpConfig defaultConfig() {
@@ -21,8 +17,8 @@ public class HttpConfig {
     }
 
     /**
-     * Use {@link HttpUrlConnectionClientAdapter} for the HTTP client adapter.
-     * Recommended for Android.
+     * @deprecated instead use <code>org.extism.sdk.chicory.http.config.android.AndroidHttpConfig</code>
+     *             in <code>org.extism.sdk:http-config-android</code>
      */
     @Deprecated(forRemoval = true)
     public static HttpConfig urlConnectionConfig() {
