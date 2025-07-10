@@ -56,7 +56,7 @@ jobs:
 
       - name: Release to Maven Central
         run: |
-          mvn --batch-mode --no-transfer-progress -Prelease clean verify deploy -X
+          mvn --batch-mode --no-transfer-progress -Drelease clean verify deploy -X
         env:
           MAVEN_USERNAME: ${{ secrets.JRELEASER_NEXUS2_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.JRELEASER_NEXUS2_PASSWORD }}
