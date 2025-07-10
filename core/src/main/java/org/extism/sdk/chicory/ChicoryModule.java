@@ -2,10 +2,12 @@ package org.extism.sdk.chicory;
 
 import com.dylibso.chicory.runtime.ByteArrayMemory;
 import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
 
 import java.nio.file.Path;
+import java.util.function.Function;
 
 class ChicoryModule {
 
@@ -29,11 +31,11 @@ class ChicoryModule {
         }
     }
 
-    static Instance.Builder instanceWithOptions(Instance.Builder m, Manifest.Options opts, CachedAotMachineFactory aotMachineFactory) {
+    static Instance.Builder instanceWithOptions(Instance.Builder m, Manifest.Options opts, Function<Instance, Machine> aotMachineFactory) {
         if (opts == null) {
             return m;
         }
-        // This feature is not compatibly with the native-image builder.
+        // This feature is not compatible with the native-image builder.
         if (opts.aot && !IS_NATIVE_IMAGE_AOT) {
             m.withMachineFactory(aotMachineFactory);
         }

@@ -6,6 +6,7 @@ import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.ImportFunction;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.runtime.Store;
 import com.dylibso.chicory.runtime.WasmFunctionHandle;
 import com.dylibso.chicory.wasi.WasiExitException;
@@ -26,6 +27,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.Stack;
+import java.util.function.Function;
 
 import static java.util.stream.Collectors.groupingBy;
 
@@ -42,7 +44,7 @@ class DependencyGraph {
 
     private final Store store = new Store();
     private Manifest.Options options;
-    private CachedAotMachineFactory aotMachineFactory;
+    private Function<Instance, Machine> machineFactory;
 
     public DependencyGraph(Logger logger) {
         this.logger = logger;
@@ -53,8 +55,14 @@ class DependencyGraph {
      */
     public void setOptions(Manifest.Options options) {
         this.options = options;
-        if (options != null && options.aot) {
-            this.aotMachineFactory = new CachedAotMachineFactory();
+        if (options != null) {
+            if (options.aot) {
+                this.machineFactory = new CachedAotMachineFactory();
+                return;
+            }
+            if (options.machineFactory != null) {
+                this.machineFactory = options.machineFactory;
+            }
         }
     }
 
@@ -98,10 +106,12 @@ class DependencyGraph {
      */
     public void registerModule(String name, WasmModule m) {
         checkCollision(name, null);
-        if (aotMachineFactory != null) {
-            aotMachineFactory.compile(m);
+        if (machineFactory != null) {
+            if (machineFactory instanceof CachedAotMachineFactory) {
+                var cachedAotMachineFactory = (CachedAotMachineFactory) machineFactory;
+                cachedAotMachineFactory.compile(m);
+            }
         }
-
         ExportSection exportSection = m.exportSection();
         for (int i = 0; i < exportSection.exportCount(); i++) {
             Export export = exportSection.getExport(i);
@@ -238,7 +248,7 @@ class DependencyGraph {
 
         Instance instance =
                 ChicoryModule.instanceWithOptions(
-                        Instance.builder(m), this.options, aotMachineFactory)
+                        Instance.builder(m), this.options, machineFactory)
                         .withImportValues(importValues)
                         .withStart(false)
                         .build();
