@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>http-config-generic</artifactId>
+    <name>http-config-generic</name>
 
     <dependencies>
         <dependency>

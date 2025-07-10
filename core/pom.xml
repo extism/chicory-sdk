@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>chicory-sdk-core</artifactId>
+    <name>chicory-sdk-core</name>
 
     <dependencies>
         <dependency>

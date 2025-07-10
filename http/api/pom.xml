@@ -10,5 +10,6 @@
     </parent>
 
     <artifactId>http-api</artifactId>
+    <name>http-api</name>
 
 </project>

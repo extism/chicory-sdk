@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>http-config-android</artifactId>
+    <name>http-config-android</name>
 
     <dependencies>
         <dependency>

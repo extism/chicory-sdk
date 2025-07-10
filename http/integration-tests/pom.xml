@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>http-integration-tests</artifactId>
+    <name>http-integration-tests</name>
 
     <dependencies>
         <dependency>

@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>http-json-jackson</artifactId>
+    <name>http-json-jackson</name>
 
     <dependencies>
         <dependency>
