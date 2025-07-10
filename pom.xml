@@ -6,7 +6,7 @@
   <groupId>org.extism.sdk</groupId>
   <artifactId>chicory-sdk</artifactId>
   <version>999-SNAPSHOT</version>
-  <packaging>jar</packaging>
+  <packaging>pom</packaging>
 
   <name>chicory-sdk</name>
   <url>https://github.com/extism/extism</url>
@@ -71,58 +71,12 @@
   </properties>
 
   <dependencies>
-    <dependency>
-      <groupId>com.dylibso.chicory</groupId>
-      <artifactId>runtime</artifactId>
-      <version>${chicory.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.dylibso.chicory</groupId>
-      <artifactId>wasi</artifactId>
-      <version>${chicory.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.dylibso.chicory</groupId>
-      <artifactId>compiler</artifactId>
-      <version>${chicory.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>${junit.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.google.jimfs</groupId>
-      <artifactId>jimfs</artifactId>
-      <version>${jimfs.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-      <version>${jackson-core.version}</version>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>jakarta.json</groupId>
-      <artifactId>jakarta.json-api</artifactId>
-      <version>${jakarta.json-api.version}</version>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.parsson</groupId>
-      <artifactId>jakarta.json</artifactId>
-      <version>${jakarta.json.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.gaul</groupId>
-      <artifactId>httpbin</artifactId>
-      <version>${httpbin.version}</version>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
+
+  <modules>
+    <module>core</module>
+    <module>http</module>
+  </modules>
 
   <profiles>
     <profile>
