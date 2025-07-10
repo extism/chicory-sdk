@@ -5,7 +5,7 @@
 
   <groupId>org.extism.sdk</groupId>
   <artifactId>chicory-sdk</artifactId>
-  <version>0.2.0</version>
+  <version>999-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>chicory-sdk</name>
