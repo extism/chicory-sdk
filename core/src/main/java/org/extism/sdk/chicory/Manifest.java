@@ -1,5 +1,7 @@
 package org.extism.sdk.chicory;
 
+import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.wasi.WasiOptions;
 import org.extism.sdk.chicory.http.HttpConfig;
 
@@ -7,6 +9,7 @@ import com.dylibso.chicory.wasm.types.MemoryLimits;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 public class Manifest {
 
@@ -16,6 +19,7 @@ public class Manifest {
 
     public static class Options {
         boolean aot = false;
+        Function<Instance, Machine> machineFactory;
         EnumSet<Validation> validationFlags = EnumSet.noneOf(Validation.class);
         ConfigProvider config = ConfigProvider.empty();
         WasiOptions wasiOptions = WasiOptions.builder().build();
@@ -29,6 +33,11 @@ public class Manifest {
 
         public Options withAoT(boolean enabled) {
             this.aot = enabled;
+            return this;
+        }
+
+        public Options withMachineFactory(Function<Instance, Machine> machineFactory) {
+            this.machineFactory = machineFactory;
             return this;
         }
 
