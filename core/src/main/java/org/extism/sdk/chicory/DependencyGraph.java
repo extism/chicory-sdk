@@ -56,7 +56,7 @@ class DependencyGraph {
     public void setOptions(Manifest.Options options) {
         this.options = options;
         if (options != null) {
-            if (options.aot) {
+            if (options.aot && options.machineFactory == null) {
                 this.machineFactory = new CachedAotMachineFactory();
                 return;
             }

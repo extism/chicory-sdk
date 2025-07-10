@@ -3,12 +3,14 @@ package org.extism.sdk.chicory;
 import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.ValType;
 
 import java.util.List;
+import java.util.function.Function;
 
 public class Kernel {
 
@@ -39,7 +41,7 @@ public class Kernel {
         this(null);
     }
 
-    Kernel(CachedAotMachineFactory machineFactory) {
+    Kernel(Function<Instance, Machine> machineFactory) {
         Instance kernel = instance(machineFactory);
         instanceMemory = kernel.memory();
         alloc = kernel.export("alloc");
@@ -64,11 +66,11 @@ public class Kernel {
         memoryBytes = kernel.export("memory_bytes");
     }
 
-    private static Instance instance(CachedAotMachineFactory machineFactory) {
+    private static Instance instance(Function<Instance, Machine> machineFactory) {
         var kernelStream = Kernel.class.getClassLoader().getResourceAsStream("extism-runtime.wasm");
         WasmModule module = Parser.parse(kernelStream);
-        if (machineFactory != null) {
-            machineFactory.compile(module);
+        if (machineFactory != null && machineFactory instanceof CachedAotMachineFactory) {
+            ((CachedAotMachineFactory) machineFactory).compile(module);
         }
         return Instance.builder(module).withMachineFactory(machineFactory).build();
     }

@@ -3,11 +3,13 @@ package org.extism.sdk.chicory;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
 import org.extism.sdk.chicory.http.HttpConfig;
 
 import java.util.Arrays;
+import java.util.function.Function;
 
 
 /**
@@ -37,17 +39,23 @@ class Linker {
         ConfigProvider config;
         String[] allowedHosts;
         WasiOptions wasiOptions;
-        CachedAotMachineFactory aotMachineFactory;
+        Function<Instance, Machine> machineFactory = null;
         HttpConfig httpConfig;
-        dg.setOptions(manifest.options);
-        config = manifest.options.config;
-        allowedHosts = manifest.options.allowedHosts;
-        wasiOptions = manifest.options.wasiOptions;
-        aotMachineFactory = manifest.options.aot? new CachedAotMachineFactory() : null;
-        httpConfig = manifest.options.httpConfig;
+        Manifest.Options options = manifest.options;
+        dg.setOptions(options);
+        config = options.config;
+        allowedHosts = options.allowedHosts;
+        wasiOptions = options.wasiOptions;
+        if (options.aot && options.machineFactory == null) {
+            machineFactory = new CachedAotMachineFactory();
+        }
+        if (options.machineFactory != null) {
+            machineFactory = options.machineFactory;
+        }
+        httpConfig = options.httpConfig;
 
         // Register the HostEnv exports.
-        var hostEnv = new HostEnv(new Kernel(aotMachineFactory), config, allowedHosts, httpConfig, logger);
+        var hostEnv = new HostEnv(new Kernel(machineFactory), config, allowedHosts, httpConfig, logger);
         dg.registerFunctions(hostEnv.toHostFunctions());
 
         // Register the WASI host functions.
