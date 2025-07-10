@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>http</artifactId>
+    <name>http</name>
     <packaging>pom</packaging>
 
     <profiles>

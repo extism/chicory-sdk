@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>http-json-jakarta</artifactId>
+    <name>http-json-jakarta</name>
 
     <dependencies>
         <dependency>
