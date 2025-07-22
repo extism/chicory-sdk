@@ -5,6 +5,7 @@ import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.TrapException;
 import com.dylibso.chicory.wasi.WasiExitException;
+import com.dylibso.chicory.wasm.InvalidException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -133,32 +134,32 @@ class Initializer {
 
     private static EntryPoint findEntryPoint(Instance instance, Logger logger) {
         // Check for Haskell module
-        ExportFunction hsInit = instance.export("hs_init");
-        if (hsInit != null) {
+        try {
+            ExportFunction hsInit = instance.export("hs_init");
             logger.debug("Detected Haskell runtime");
             return new HaskellEntryPoint(hsInit);
-        }
+        } catch (InvalidException ex) {}
 
         // Check for reactor module
-        ExportFunction initialize = instance.export("_initialize");
-        if (initialize != null) {
+        try {
+            ExportFunction initialize = instance.export("_initialize");
             logger.debug("Detected WASI reactor module");
             return new WasiReactorEntryPoint(initialize);
-        }
+        } catch (InvalidException ex) {}
 
         // Check for command module
-        ExportFunction start = instance.export("_start");
-        if (start != null) {
+        try {
+            ExportFunction start = instance.export("_start");
             logger.debug("Detected WASI command module");
             return new WasiCommandEntryPoint(start);
-        }
+        } catch (InvalidException ex) {}
 
         // Check for constructors
-        ExportFunction ctors = instance.export("__wasm_call_ctors");
-        if (ctors != null) {
+        try {
+            ExportFunction ctors = instance.export("__wasm_call_ctors");
             logger.debug("Detected WASI module with constructors");
             return new WasiConstructorsEntryPoint(ctors);
-        }
+        } catch (InvalidException ex) {}
 
         logger.debug("No entry point detected");
         return null;
