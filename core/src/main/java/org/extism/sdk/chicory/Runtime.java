@@ -12,32 +12,84 @@ import java.util.Map;
 
 class Initializer {
     
-    enum Type {
-        WASI_COMMAND("WASI Command"),
-        WASI_REACTOR("WASI Reactor"),
-        WASI_CONSTRUCTORS("WASI Constructors"),
-        HASKELL("Haskell");
-
-        private final String name;
-
-        Type(String name) {
-            this.name = name;
-        }
-
-        @Override
-        public String toString() {
-            return name;
-        }
+    abstract static class EntryPoint {
+        abstract void initialize();
     }
     
-    static class EntryPoint {
-        final Initializer.Type type;
-        final ExportFunction init;
+    static class WasiCommandEntryPoint extends EntryPoint {
+        private final ExportFunction start;
         
-        EntryPoint(Initializer.Type type, ExportFunction init) {
-            this.type = type;
-            this.init = init;
+        WasiCommandEntryPoint(ExportFunction start) {
+            this.start = start;
         }
+        
+        @Override
+        void initialize() {
+            try {
+                start.apply();
+            } catch (WasiExitException ex) {
+                if (ex.exitCode() != 0) {
+                    throw new ExtismException("WASI command exited with code: " + ex.exitCode(), ex);
+                }
+            } catch (TrapException e) {
+                throw new ExtismException("Failed to initialize WASI command: " + e.getMessage(), e);
+            }
+        }
+
+    }
+    
+    static class WasiReactorEntryPoint extends EntryPoint {
+        private final ExportFunction initialize;
+        
+        WasiReactorEntryPoint(ExportFunction initialize) {
+            this.initialize = initialize;
+        }
+        
+        @Override
+        void initialize() {
+            try {
+                initialize.apply();
+            } catch (TrapException e) {
+                throw new ExtismException("Failed to initialize WASI reactor: " + e.getMessage(), e);
+            }
+        }
+
+    }
+    
+    static class WasiConstructorsEntryPoint extends EntryPoint {
+        private final ExportFunction ctors;
+        
+        WasiConstructorsEntryPoint(ExportFunction ctors) {
+            this.ctors = ctors;
+        }
+        
+        @Override
+        void initialize() {
+            try {
+                ctors.apply();
+            } catch (TrapException e) {
+                throw new ExtismException("Failed to call constructors: " + e.getMessage(), e);
+            }
+        }
+
+    }
+    
+    static class HaskellEntryPoint extends EntryPoint {
+        private final ExportFunction hsInit;
+        
+        HaskellEntryPoint(ExportFunction hsInit) {
+            this.hsInit = hsInit;
+        }
+        
+        @Override
+        void initialize() {
+            try {
+                hsInit.apply();
+            } catch (TrapException e) {
+                throw new ExtismException("Failed to initialize Haskell runtime: " + e.getMessage(), e);
+            }
+        }
+
     }
     
     final EntryPoint main;
@@ -49,28 +101,14 @@ class Initializer {
     }
 
     public void initialize() {
-        for (var runtime : entryPoints) {
-            safeInit(runtime);
-        }
-        safeInit(main);
-    }
-
-
-    private void safeInit(EntryPoint rt) {
-        if (rt == null) {
-            return;
-        }
-        try {
-            rt.init.apply();
-        } catch (WasiExitException ex) {
-            // ProcExit always throws, but it's an error only if it's nonzero.
-            if (ex.exitCode() != 0) {
-                throw new ExtismException("WASI command exited with code: " + ex.exitCode(), ex);
+        for (var entryPoint : entryPoints) {
+            if (entryPoint != null) {
+                entryPoint.initialize();
             }
-        } catch (TrapException e) {
-            throw new ExtismException("Failed to initialize: " + e.getMessage(), e);
         }
-
+        if (main != null) {
+            main.initialize();
+        }
     }
 
     static Initializer detect(Map<String, Instance> instances, Logger logger) {
@@ -99,28 +137,28 @@ class Initializer {
         ExportFunction hsInit = instance.export("hs_init");
         if (hsInit != null) {
             logger.debugf("Detected Haskell runtime");
-            return new EntryPoint(Type.HASKELL, hsInit);
+            return new HaskellEntryPoint(hsInit);
         }
 
         // Check for reactor module
         ExportFunction initialize = instance.export("_initialize");
         if (initialize != null) {
             logger.debugf("Detected WASI reactor module");
-            return new EntryPoint(Type.WASI_REACTOR, initialize);
+            return new WasiReactorEntryPoint(initialize);
         }
 
         // Check for command module
         ExportFunction start = instance.export("_start");
         if (start != null) {
             logger.debugf("Detected WASI command module");
-            return new EntryPoint(Type.WASI_COMMAND, start);
+            return new WasiCommandEntryPoint(start);
         }
 
         // Check for constructors
         ExportFunction ctors = instance.export("__wasm_call_ctors");
         if (ctors != null) {
             logger.debugf("Detected WASI module with constructors");
-            return new EntryPoint(Type.WASI_CONSTRUCTORS, ctors);
+            return new WasiConstructorsEntryPoint(ctors);
         }
 
         logger.debugf("No entry point detected");
