@@ -242,9 +242,7 @@ class DependencyGraph {
         
         // Detect and initialize guest runtimes
         Runtime.GuestRuntime guestRuntime = runtime.detectGuestRuntime(this.instances);
-        if (guestRuntime.init != null) {
-            guestRuntime.init.run();
-        }
+        guestRuntime.initialize();
 
         return this.getMainInstance();
     }
