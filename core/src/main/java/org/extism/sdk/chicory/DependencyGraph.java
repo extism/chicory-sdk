@@ -37,6 +37,7 @@ class DependencyGraph {
     public static final String MAIN_MODULE_NAME = "main";
 
     private final Logger logger;
+    private final Runtime runtime;
 
     private final Map<String, Set<String>> registeredSymbols = new HashMap<>();
     private final Map<String, WasmModule> modules = new HashMap<>();
@@ -50,6 +51,7 @@ class DependencyGraph {
 
     public DependencyGraph(Logger logger) {
         this.logger = logger;
+        this.runtime = new Runtime(logger);
     }
 
     /**
@@ -226,13 +228,10 @@ class DependencyGraph {
             trampoline.resolveFunction(ef);
         }
 
-        // We can now initialize all modules.
+        // We can now initialize all modules using runtime detection.
         for (var inst : this.instances.values()) {
             try {
                 inst.initialize(false);
-
-                invokeInitializationFunction(inst);
-
             } catch (WasiExitException ex) {
                 // ProcExit always throws, but it's an error only if it's nonzero.
                 if (ex.exitCode() != 0) {
@@ -240,20 +239,16 @@ class DependencyGraph {
                 }
             }
         }
+        
+        // Detect and initialize guest runtimes
+        Runtime.GuestRuntime guestRuntime = runtime.detectGuestRuntime(this.instances);
+        if (guestRuntime.init != null) {
+            guestRuntime.init.run();
+        }
 
         return this.getMainInstance();
     }
 
-    private void invokeInitializationFunction(Instance inst) {
-        var startFunction = inst.export("_start");
-        if (startFunction != null) {
-            try {
-                startFunction.apply();
-            } catch (TrapException e) {
-                throw new ExtismException(e.getMessage(), e);
-            }
-        }
-    }
 
     private Instance instantiate(String moduleId, List<HostFunction> moreHostFunctions) {
         WasmModule m = this.modules.get(moduleId);
