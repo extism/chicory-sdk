@@ -8,8 +8,10 @@ import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.runtime.Store;
+import com.dylibso.chicory.runtime.TrapException;
 import com.dylibso.chicory.runtime.WasmFunctionHandle;
 import com.dylibso.chicory.wasi.WasiExitException;
+import com.dylibso.chicory.wasm.UninstantiableException;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.Export;
 import com.dylibso.chicory.wasm.types.ExportSection;
@@ -227,7 +229,10 @@ class DependencyGraph {
         // We can now initialize all modules.
         for (var inst : this.instances.values()) {
             try {
-                inst.initialize(true);
+                inst.initialize(false);
+
+                invokeInitializationFunction(inst);
+
             } catch (WasiExitException ex) {
                 // ProcExit always throws, but it's an error only if it's nonzero.
                 if (ex.exitCode() != 0) {
@@ -237,6 +242,17 @@ class DependencyGraph {
         }
 
         return this.getMainInstance();
+    }
+
+    private void invokeInitializationFunction(Instance inst) {
+        var startFunction = inst.export("_start");
+        if (startFunction != null) {
+            try {
+                startFunction.apply();
+            } catch (TrapException e) {
+                throw new ExtismException(e.getMessage(), e);
+            }
+        }
     }
 
     private Instance instantiate(String moduleId, List<HostFunction> moreHostFunctions) {
