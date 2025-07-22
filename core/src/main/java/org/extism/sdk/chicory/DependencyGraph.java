@@ -8,10 +8,8 @@ import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.runtime.Store;
-import com.dylibso.chicory.runtime.TrapException;
 import com.dylibso.chicory.runtime.WasmFunctionHandle;
 import com.dylibso.chicory.wasi.WasiExitException;
-import com.dylibso.chicory.wasm.UninstantiableException;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.Export;
 import com.dylibso.chicory.wasm.types.ExportSection;
@@ -37,7 +35,6 @@ class DependencyGraph {
     public static final String MAIN_MODULE_NAME = "main";
 
     private final Logger logger;
-    private final Runtime runtime;
 
     private final Map<String, Set<String>> registeredSymbols = new HashMap<>();
     private final Map<String, WasmModule> modules = new HashMap<>();
@@ -51,7 +48,6 @@ class DependencyGraph {
 
     public DependencyGraph(Logger logger) {
         this.logger = logger;
-        this.runtime = new Runtime(logger);
     }
 
     /**
@@ -241,8 +237,7 @@ class DependencyGraph {
         }
         
         // Detect and initialize guest runtimes
-        Runtime.GuestRuntime guestRuntime = runtime.detectGuestRuntime(this.instances);
-        guestRuntime.initialize();
+        Initializer.detect(this.instances, logger).initialize();
 
         return this.getMainInstance();
     }
