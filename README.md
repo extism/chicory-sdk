@@ -182,6 +182,92 @@ System.out.println(output);
 // => {"count": 3, "total": 3, "vowels": "aeiouAEIOU"}
 ```
 
+## HTTP and JSON Support
+
+The HTTP and JSON interfaces are an optional dependency. For convenience, we provide a common set of config choices, but you can plug your own.
+
+## Predefined Java Config (Java 11+ HTTP Client + Jackson JSON):
+
+```xml
+<dependency>
+    <groupId>org.extism.sdk</groupId>
+    <artifactId>http-config-generic</artifactId>
+    <version>999-SNAPSHOT</version>
+</dependency>
+```
+
+then configure:
+
+```java
+var manifest = Manifest.ofWasms(wasm)
+    .withOptions(new Manifest.Options().withHttpConfig(GenericHttpConfig.get()))
+    .build();
+```
+
+## Predefined Android Config (URLConnection + Jackson JSON):
+
+```xml
+<dependency>
+    <groupId>org.extism.sdk</groupId>
+    <artifactId>http-config-android</artifactId>
+    <version>999-SNAPSHOT</version>
+</dependency>
+```
+
+then configure:
+
+```java
+var manifest = Manifest.ofWasms(wasm)
+    .withOptions(new Manifest.Options().withHttpConfig(AndroidHttpConfig.get()))
+    .build();
+```
+
+### Customizing HTTP and JSON Support
+
+The Chicory SDK exposes HTTP clients and JSON support through 2 thin interfaces.
+
+**HTTP** (`org.extism.sdk.chicory.http.HttpClientAdapter`) with 2 default implementations:
+
+- `org.extism.sdk:http-client-javanet`: uses `java.net.http.HttpClient`
+- `org.extism.sdk:http-client-urlconnection`: uses `java.net.HttpURLConnection`
+
+**JSON** (`org.extism.sdk.chicory.http.HttpJsonCodec`) with 2 default implementations:
+
+- `org.extism.sdk:http-json-jackson`: uses the Jackson library
+- `org.extism.sdk:http-json-jakarta`: uses the lightweight `jakarta.json.Json` interfaces
+
+For instance, to use `org.extism.sdk:http-client-javanet` with `org.extism.sdk:http-json-jackson` 
+you could explicitly add the dependencies:
+
+```xml
+<dependency>
+    <groupId>org.extism.sdk</groupId>
+    <artifactId>http-client-javanet</artifactId>
+    <version>999-SNAPSHOT</version>
+</dependency>
+
+<dependency>
+    <groupId>org.extism.sdk</groupId>
+    <artifactId>http-json-jackson</artifactId>
+    <version>999-SNAPSHOT</version>
+</dependency>
+```
+
+Then you can configure them:
+
+```java
+var manifest = Manifest.ofWasms(wasm)
+    .withOptions(        
+            new Manifest.Options()
+                .withHttpConfig(HttpConfig.builder()
+                        .withClientAdapter(JavaNetHttpClientAdapter::new)
+                        .withJsonCodec(JacksonJsonCodec::new)
+                        .build())).build();
+```
+
+Through the same mechanism, you can also load your own custom implementations for 
+`org.extism.sdk.chicory.http.HttpClientAdapter` and `org.extism.sdk.chicory.http.HttpJsonCodec`. 
+
 ## Development
 
 # Build
