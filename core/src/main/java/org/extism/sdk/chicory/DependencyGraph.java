@@ -237,7 +237,7 @@ class DependencyGraph {
         }
         
         // Detect and initialize guest runtimes
-        Initializer.detect(this.instances, logger).initialize();
+        Initializer.find(this.instances, logger).initialize();
 
         return this.getMainInstance();
     }

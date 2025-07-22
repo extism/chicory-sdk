@@ -13,20 +13,24 @@ import java.util.Map;
 class Initializer {
     
     abstract static class EntryPoint {
+        protected final ExportFunction init;
+        
+        EntryPoint(ExportFunction init) {
+            this.init = init;
+        }
+        
         abstract void initialize();
     }
     
     static class WasiCommandEntryPoint extends EntryPoint {
-        private final ExportFunction start;
-        
         WasiCommandEntryPoint(ExportFunction start) {
-            this.start = start;
+            super(start);
         }
         
         @Override
         void initialize() {
             try {
-                start.apply();
+                init.apply();
             } catch (WasiExitException ex) {
                 if (ex.exitCode() != 0) {
                     throw new ExtismException("WASI command exited with code: " + ex.exitCode(), ex);
@@ -39,16 +43,14 @@ class Initializer {
     }
     
     static class WasiReactorEntryPoint extends EntryPoint {
-        private final ExportFunction initialize;
-        
         WasiReactorEntryPoint(ExportFunction initialize) {
-            this.initialize = initialize;
+            super(initialize);
         }
         
         @Override
         void initialize() {
             try {
-                initialize.apply();
+                init.apply();
             } catch (TrapException e) {
                 throw new ExtismException("Failed to initialize WASI reactor: " + e.getMessage(), e);
             }
@@ -57,16 +59,14 @@ class Initializer {
     }
     
     static class WasiConstructorsEntryPoint extends EntryPoint {
-        private final ExportFunction ctors;
-        
         WasiConstructorsEntryPoint(ExportFunction ctors) {
-            this.ctors = ctors;
+            super(ctors);
         }
         
         @Override
         void initialize() {
             try {
-                ctors.apply();
+                init.apply();
             } catch (TrapException e) {
                 throw new ExtismException("Failed to call constructors: " + e.getMessage(), e);
             }
@@ -75,16 +75,14 @@ class Initializer {
     }
     
     static class HaskellEntryPoint extends EntryPoint {
-        private final ExportFunction hsInit;
-        
         HaskellEntryPoint(ExportFunction hsInit) {
-            this.hsInit = hsInit;
+            super(hsInit);
         }
         
         @Override
         void initialize() {
             try {
-                hsInit.apply();
+                init.apply();
             } catch (TrapException e) {
                 throw new ExtismException("Failed to initialize Haskell runtime: " + e.getMessage(), e);
             }
@@ -111,57 +109,58 @@ class Initializer {
         }
     }
 
-    static Initializer detect(Map<String, Instance> instances, Logger logger) {
-        Instance mainInstance = instances.get(DependencyGraph.MAIN_MODULE_NAME);
-        if (mainInstance == null) {
-            throw new ExtismException("Main instance not found");
-        }
-        
-        var mainRuntime = detectEntryPoint(mainInstance, logger);
+    static Initializer find(Map<String, Instance> instances, Logger logger) {
         var entryPoints = new ArrayList<EntryPoint>();
+        EntryPoint main = null;
         
-        for (Map.Entry<String, Instance> entry : instances.entrySet()) {
-            if (!DependencyGraph.MAIN_MODULE_NAME.equals(entry.getKey())) {
-                var runtime = detectEntryPoint(entry.getValue(), logger);
-                if (runtime != null) {
+        for (var entry : instances.entrySet()) {
+            var runtime = findEntryPoint(entry.getValue(), logger);
+            if (runtime != null) {
+                if (DependencyGraph.MAIN_MODULE_NAME.equals(entry.getKey())) {
+                    main = runtime;
+                } else {
                     entryPoints.add(runtime);
                 }
             }
         }
 
-        return new Initializer(mainRuntime, entryPoints);
+        if (main == null) {
+            logger.debug("No entry point detected for main");
+        }
+
+        return new Initializer(main, entryPoints);
     }
 
-    private static EntryPoint detectEntryPoint(Instance instance, Logger logger) {
+    private static EntryPoint findEntryPoint(Instance instance, Logger logger) {
         // Check for Haskell module
         ExportFunction hsInit = instance.export("hs_init");
         if (hsInit != null) {
-            logger.debugf("Detected Haskell runtime");
+            logger.debug("Detected Haskell runtime");
             return new HaskellEntryPoint(hsInit);
         }
 
         // Check for reactor module
         ExportFunction initialize = instance.export("_initialize");
         if (initialize != null) {
-            logger.debugf("Detected WASI reactor module");
+            logger.debug("Detected WASI reactor module");
             return new WasiReactorEntryPoint(initialize);
         }
 
         // Check for command module
         ExportFunction start = instance.export("_start");
         if (start != null) {
-            logger.debugf("Detected WASI command module");
+            logger.debug("Detected WASI command module");
             return new WasiCommandEntryPoint(start);
         }
 
         // Check for constructors
         ExportFunction ctors = instance.export("__wasm_call_ctors");
         if (ctors != null) {
-            logger.debugf("Detected WASI module with constructors");
+            logger.debug("Detected WASI module with constructors");
             return new WasiConstructorsEntryPoint(ctors);
         }
 
-        logger.debugf("No entry point detected");
+        logger.debug("No entry point detected");
         return null;
     }
 }
