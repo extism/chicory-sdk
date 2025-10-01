@@ -24,6 +24,7 @@ public class Manifest {
         ConfigProvider config = ConfigProvider.empty();
         WasiOptions wasiOptions = WasiOptions.builder().build();
         String[] allowedHosts = new String[0];
+        public boolean enableHttpResponseHeaders;
         HttpConfig httpConfig = null;
         MemoryLimits memoryLimits = null;
 
@@ -69,6 +70,11 @@ public class Manifest {
 
         public Options withHttpConfig(HttpConfig httpConfig) {
             this.httpConfig = httpConfig;
+            return this;
+        }
+
+        public Options withHttpResponseHeaders(boolean enabled) {
+            this.enableHttpResponseHeaders = enabled;
             return this;
         }
 

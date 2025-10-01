@@ -44,7 +44,7 @@ public class HttpTest extends TestCase {
         var logger = new SystemLogger();
 
         var anyHost = new String[]{"*.lvh.me"};
-        var hostEnv = new HostEnv(new Kernel(), ConfigProvider.empty(), anyHost, httpConfig, logger);
+        var hostEnv = new HostEnv(new Kernel(), ConfigProvider.empty(), anyHost, false, httpConfig, logger);
 
         URI uri = URI.create("test.lvh.me:" + httpBin.getPort() + "/headers");
         try {
@@ -84,11 +84,18 @@ public class HttpTest extends TestCase {
         allowAnyHost(urlConnectionConfig());
     }
 
+    public void testResponseHeadersEnabled() {
+        responseHeadersEnabled(defaultConfig());
+        responseHeadersEnabled(urlConnectionConfig());
+
+    }
+
+
     public void noAllowedHosts(HttpConfig httpConfig) {
         var logger = new SystemLogger();
 
         var noAllowedHosts = new String[0];
-        var hostEnv = new HostEnv(new Kernel(), ConfigProvider.empty(), noAllowedHosts, httpConfig, logger);
+        var hostEnv = new HostEnv(new Kernel(), ConfigProvider.empty(), noAllowedHosts, false, httpConfig, logger);
 
         URI uri = URI.create("http://lvh.me:" + httpBin.getPort() + "/headers");
         try {
@@ -107,7 +114,7 @@ public class HttpTest extends TestCase {
         var logger = new SystemLogger();
 
         var anyHost = new String[]{"lvh.me"};
-        var hostEnv = new HostEnv(new Kernel(), ConfigProvider.empty(), anyHost, httpConfig, logger);
+        var hostEnv = new HostEnv(new Kernel(), ConfigProvider.empty(), anyHost, false, httpConfig, logger);
 
         byte[] response = hostEnv.http().request(
                 "GET",
@@ -142,7 +149,7 @@ public class HttpTest extends TestCase {
         var logger = new SystemLogger();
 
         var anyHost = new String[]{"*.lvh.me"};
-        var hostEnv = new HostEnv(new Kernel(), ConfigProvider.empty(), anyHost, httpConfig, logger);
+        var hostEnv = new HostEnv(new Kernel(), ConfigProvider.empty(), anyHost, false, httpConfig, logger);
 
         byte[] response = hostEnv.http().request(
                 "GET",
@@ -170,7 +177,7 @@ public class HttpTest extends TestCase {
         var logger = new SystemLogger();
 
         var anyHost = new String[]{"*.lvh.me", "lvh.me"};
-        var hostEnv = new HostEnv(new Kernel(), ConfigProvider.empty(), anyHost, httpConfig, logger);
+        var hostEnv = new HostEnv(new Kernel(), ConfigProvider.empty(), anyHost, false, httpConfig, logger);
 
         byte[] response = hostEnv.http().request(
                 "GET",
@@ -195,7 +202,7 @@ public class HttpTest extends TestCase {
         var logger = new SystemLogger();
 
         var anyHost = new String[]{"*"};
-        var hostEnv = new HostEnv(new Kernel(), ConfigProvider.empty(), anyHost, httpConfig, logger);
+        var hostEnv = new HostEnv(new Kernel(), ConfigProvider.empty(), anyHost, false, httpConfig, logger);
 
         byte[] response = hostEnv.http().request(
                 "GET",
@@ -221,8 +228,44 @@ public class HttpTest extends TestCase {
                 new byte[0]);
 
         assertEquals(200, hostEnv.http().statusCode());
+        assertEquals(0, hostEnv.http().headers()[0]);
         assertTrue(response.length > 0);
     }
+
+    public void responseHeadersEnabled(HttpConfig httpConfig) {
+        var logger = new SystemLogger();
+
+        var anyHost = new String[]{"*"};
+        var hostEnv = new HostEnv(new Kernel(), ConfigProvider.empty(), anyHost, true, httpConfig, logger);
+
+        byte[] response = hostEnv.http().request(
+                "GET",
+                URI.create("http://www.lvh.me:"  + httpBin.getPort() + "/headers"),
+                Map.of("X-Custom-Header", "hello"),
+                new byte[0]);
+        JsonObject responseObject = Json.createReader(new ByteArrayInputStream(response)).readObject();
+        assertEquals("hello", responseObject.getJsonObject("headers").getString("X-Custom-Header"));
+
+
+        response = hostEnv.http().request(
+                "GET",
+                URI.create("http://lvh.me:" + httpBin.getPort() + "/headers"),
+                Map.of("X-Custom-Header", "hello"),
+                new byte[0]);
+        responseObject = Json.createReader(new ByteArrayInputStream(response)).readObject();
+        assertEquals("hello", responseObject.getJsonObject("headers").getString("X-Custom-Header"));
+
+        response = hostEnv.http().request(
+                "GET",
+                URI.create("http://example.com/"),
+                Map.of(),
+                new byte[0]);
+
+        assertEquals(200, hostEnv.http().statusCode());
+        assertTrue(hostEnv.http().headers()[0] > 0);
+        assertTrue(response.length > 0);
+    }
+
 
 
 }
