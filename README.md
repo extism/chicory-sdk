@@ -16,7 +16,7 @@ To use the Chicory java-sdk with maven you need to add the following dependency 
 ```xml
 <dependency>
     <groupId>org.extism.sdk</groupId>
-    <artifactId>chicory-sdk</artifactId>
+    <artifactId>chicory-sdk-core</artifactId>
     <version>999-SNAPSHOT</version>
 </dependency>
 ```
