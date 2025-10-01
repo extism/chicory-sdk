@@ -224,10 +224,10 @@ class DependencyGraph {
             trampoline.resolveFunction(ef);
         }
 
-        // We can now initialize all modules.
+        // We can now initialize all modules using runtime detection.
         for (var inst : this.instances.values()) {
             try {
-                inst.initialize(true);
+                inst.initialize(false);
             } catch (WasiExitException ex) {
                 // ProcExit always throws, but it's an error only if it's nonzero.
                 if (ex.exitCode() != 0) {
@@ -235,9 +235,13 @@ class DependencyGraph {
                 }
             }
         }
+        
+        // Detect and initialize guest runtimes
+        Initializer.find(this.instances, logger).initialize();
 
         return this.getMainInstance();
     }
+
 
     private Instance instantiate(String moduleId, List<HostFunction> moreHostFunctions) {
         WasmModule m = this.modules.get(moduleId);
