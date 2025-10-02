@@ -41,10 +41,12 @@ class Linker {
         WasiOptions wasiOptions;
         Function<Instance, Machine> machineFactory = null;
         HttpConfig httpConfig;
+        boolean enableHttpResponseHeaders;
         Manifest.Options options = manifest.options;
         dg.setOptions(options);
         config = options.config;
         allowedHosts = options.allowedHosts;
+        enableHttpResponseHeaders = options.enableHttpResponseHeaders;
         wasiOptions = options.wasiOptions;
         if (options.aot && options.machineFactory == null) {
             machineFactory = new CachedAotMachineFactory();
@@ -55,7 +57,7 @@ class Linker {
         httpConfig = options.httpConfig;
 
         // Register the HostEnv exports.
-        var hostEnv = new HostEnv(new Kernel(machineFactory), config, allowedHosts, httpConfig, logger);
+        var hostEnv = new HostEnv(new Kernel(machineFactory), config, allowedHosts, enableHttpResponseHeaders, httpConfig, logger);
         dg.registerFunctions(hostEnv.toHostFunctions());
 
         // Register the WASI host functions.

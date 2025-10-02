@@ -27,14 +27,14 @@ public class HostEnv {
     private final Config config;
     private final Http http;
 
-    public HostEnv(Kernel kernel, ConfigProvider config, String[] allowedHosts, HttpConfig httpConfig, Logger logger) {
+    public HostEnv(Kernel kernel, ConfigProvider config, String[] allowedHosts, boolean enableHttpResponseHeaders, HttpConfig httpConfig, Logger logger) {
         this.kernel = kernel;
         this.memory = new Memory();
         this.logger = logger;
         this.config = new Config(config);
         this.var = new Var();
         this.log = new Log();
-        this.http = httpConfig == null ? null : new Http(allowedHosts, httpConfig);
+        this.http = httpConfig == null ? null : new Http(allowedHosts, enableHttpResponseHeaders, httpConfig);
     }
 
     public Log log() {
@@ -287,10 +287,12 @@ public class HostEnv {
     public class Http {
 
         private final HostPattern[] hostPatterns;
+        private final boolean enableHttpResponseHeaders;
         HttpJsonCodec jsonCodec;
         HttpClientAdapter clientAdapter;
 
-        public Http(String[] allowedHosts, HttpConfig httpConfig) {
+        public Http(String[] allowedHosts, boolean enableHttpResponseHeaders, HttpConfig httpConfig) {
+            this.enableHttpResponseHeaders = enableHttpResponseHeaders;
             if (allowedHosts == null) {
                 allowedHosts = new String[0];
             }
@@ -356,8 +358,11 @@ public class HostEnv {
             return clientAdapter.statusCode();
         }
 
-        long[] headers(Instance instance, long[] longs) {
+        public long[] headers() {
             var result = new long[1];
+            if (!enableHttpResponseHeaders) {
+                return result;
+            }
             var headers = clientAdapter.headers();
             if (headers == null) {
                 return result;
@@ -365,6 +370,10 @@ public class HostEnv {
             var bytes = jsonCodec.encodeHeaders(Map.of());
             result[0] = memory().writeBytes(bytes);
             return result;
+        }
+
+        long[] headers(Instance instance, long[] longs) {
+            return headers();
         }
 
         public HostFunction[] toHostFunctions() {

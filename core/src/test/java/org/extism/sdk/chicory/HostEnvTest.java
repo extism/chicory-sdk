@@ -12,7 +12,7 @@ public class HostEnvTest extends TestCase {
         var logger = new SystemLogger();
 
         var config = Map.of("key", "value");
-        var hostEnv = new HostEnv(new Kernel(), ConfigProvider.ofMap(config), new String[0], null, logger);
+        var hostEnv = new HostEnv(new Kernel(), ConfigProvider.ofMap(config), new String[0], false, null, logger);
 
         assertEquals(hostEnv.config().get("key"), "value");
 
@@ -31,7 +31,7 @@ public class HostEnvTest extends TestCase {
         var logger = new SystemLogger();
 
         var config = Map.of("key", "value");
-        var hostEnv = new HostEnv(new Kernel(), ConfigProvider.ofMap(config), new String[0], null, logger);
+        var hostEnv = new HostEnv(new Kernel(), ConfigProvider.ofMap(config), new String[0], false, null, logger);
         try {
             hostEnv.http().request("POST", URI.create("https://www.example.com"), Map.of(), new byte[0]);
             fail("It should throw an ExtismConfigurationException");
