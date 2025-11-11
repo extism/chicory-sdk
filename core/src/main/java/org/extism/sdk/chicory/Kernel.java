@@ -1,5 +1,6 @@
 package org.extism.sdk.chicory;
 
+import com.dylibso.chicory.runtime.ByteArrayMemory;
 import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
@@ -7,6 +8,7 @@ import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.FunctionType;
+import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.ValType;
 
 import java.util.List;
@@ -38,11 +40,11 @@ public class Kernel {
     final ExportFunction memoryBytes;
 
     public Kernel() {
-        this(null);
+        this(null, null);
     }
 
-    Kernel(Function<Instance, Machine> machineFactory) {
-        Instance kernel = instance(machineFactory);
+    Kernel(Function<Instance, Machine> machineFactory, MemoryLimits memoryLimits) {
+        Instance kernel = instance(machineFactory, memoryLimits);
         instanceMemory = kernel.memory();
         alloc = kernel.export("alloc");
         free = kernel.export("free");
@@ -66,13 +68,18 @@ public class Kernel {
         memoryBytes = kernel.export("memory_bytes");
     }
 
-    private static Instance instance(Function<Instance, Machine> machineFactory) {
+    private static Instance instance(Function<Instance, Machine> machineFactory,
+        MemoryLimits memoryLimits) {
         var kernelStream = Kernel.class.getClassLoader().getResourceAsStream("extism-runtime.wasm");
         WasmModule module = Parser.parse(kernelStream);
         if (machineFactory != null && machineFactory instanceof CachedAotMachineFactory) {
             ((CachedAotMachineFactory) machineFactory).compile(module);
         }
-        return Instance.builder(module).withMachineFactory(machineFactory).build();
+        var builder = Instance.builder(module).withMachineFactory(machineFactory);
+        if (memoryLimits != null) {
+            builder.withMemoryFactory(ByteArrayMemory::new).withMemoryLimits(memoryLimits);
+        }
+        return builder.build();
     }
 
     public void setInput(byte[] input) {

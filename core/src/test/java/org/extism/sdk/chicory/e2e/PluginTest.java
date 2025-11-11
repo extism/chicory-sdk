@@ -1,9 +1,13 @@
 package org.extism.sdk.chicory.e2e;
 
+import com.dylibso.chicory.runtime.ByteArrayMemory;
+import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasm.UninstantiableException;
+import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
+import java.lang.reflect.Field;
 import junit.framework.TestCase;
 import org.extism.sdk.chicory.ExtismFunction;
 import org.extism.sdk.chicory.ExtismFunctionException;
@@ -21,6 +25,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.extism.sdk.chicory.http.HttpConfig;
 
 public class PluginTest extends TestCase {
 
@@ -70,6 +75,27 @@ public class PluginTest extends TestCase {
         } catch (UninstantiableException ex) {
             assertTrue(ex.getMessage().contains("limit is: 458752 and size: 1768"));
         }
+    }
+
+    public void testFailingMemoryHog() throws IOException {
+        byte[] bytes = PluginTest.class.getClassLoader()
+            .getResourceAsStream("memory-leaker/memory-leaker.wasm").readAllBytes();
+        var wasm = ManifestWasm.fromBytes(bytes).build();
+        int memorySize = 1 << 8;
+        var manifest = Manifest.ofWasms(wasm).withOptions(
+            new Manifest.Options().withAoT().withWasi(WasiOptions.builder().build()).withAoT(true)
+                .withHttpConfig(
+                    HttpConfig.builder().withClientAdapter(() -> null).withJsonCodec(() -> null)
+                        .build()).withMemoryLimits(memorySize, memorySize)).build();
+        Plugin plugin = Plugin.ofManifest(manifest).build();
+        try {
+            plugin.call("leak", new byte[0]);
+        } catch (ExtismFunctionException ex) {
+            assertTrue(ex.getMessage().contains("out of memory"));
+            assertEquals(memorySize, plugin.memory().memory().initialPages());
+            assertEquals(memorySize, plugin.memory().memory().maximumPages());
+        }
+
     }
 
     public void testCountVowels() {

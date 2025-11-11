@@ -57,7 +57,9 @@ class Linker {
         httpConfig = options.httpConfig;
 
         // Register the HostEnv exports.
-        var hostEnv = new HostEnv(new Kernel(machineFactory), config, allowedHosts, enableHttpResponseHeaders, httpConfig, logger);
+        var hostEnv =
+            new HostEnv(new Kernel(machineFactory, options.memoryLimits), config, allowedHosts,
+                enableHttpResponseHeaders, httpConfig, logger);
         dg.registerFunctions(hostEnv.toHostFunctions());
 
         // Register the WASI host functions.
